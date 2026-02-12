@@ -43,7 +43,7 @@ Astro ships ZERO JavaScript unless you explicitly add a client directive.
 Mix React, Vue, Svelte in the same project:
 
 ```bash
-npx astro add react vue svelte
+bun astro add react vue svelte
 ```
 
 ```astro
@@ -62,10 +62,10 @@ import SvelteCounter from './Counter.svelte';
 ## Quick Start
 
 ```bash
-npm create astro@latest my-project
+bun create astro@latest my-project
 cd my-project
-npx astro add tailwind react
-npm run dev
+bun astro add tailwind react
+bun dev
 ```
 
 ---
@@ -132,10 +132,10 @@ import { ClientRouter } from 'astro:transitions';
 ## Commands
 
 ```bash
-npm run dev              # Start dev server (localhost:4321)
-npm run build            # Build for production
-npm run preview          # Preview production build
-npx astro check          # TypeScript checks
+bun dev                  # Start dev server (localhost:4321)
+bun build                # Build for production
+bun preview              # Preview production build
+bun astro check          # TypeScript checks
 ```
 
 ---
