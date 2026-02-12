@@ -122,3 +122,9 @@ The following skills are available to all agents in this project:
 - **Purpose**: Modern UI/UX design with TailwindCSS + Radix UI + shadcn/ui
 - **Best for**: Planner and senior-developer agents when designing/implementing UI components
 - **Covers**: Component architecture, WCAG accessibility, design tokens, dark mode, responsive design, forms
+
+### `astro`
+- **Source**: `briantbr/astro-best-practices@astro`
+- **Purpose**: Astro 5.x framework best practices and patterns
+- **Best for**: All agents when working with Astro-specific features
+- **Covers**: Islands architecture, client directives (load/idle/visible/media/only), View Transitions, Content Collections, zero JavaScript by default, multi-framework support
