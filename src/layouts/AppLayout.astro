@@ -1,0 +1,30 @@
+---
+import Layout from "./Layout.astro";
+---
+
+<Layout>
+	<div class="h-screen grid grid-rows-[auto_1fr_auto] overflow-hidden">
+		<!-- Header -->
+		<slot name="header" />
+
+		<!-- Main content area with sidebar and workbench -->
+		<div class="relative grid grid-cols-[auto_1fr] overflow-hidden">
+			<!-- Backdrop for mobile sidebar (hidden by default) -->
+			<div
+				id="sidebar-backdrop"
+				class="hidden fixed inset-0 bg-black/50 z-40 lg:hidden"
+				aria-hidden="true"
+			>
+			</div>
+
+			<!-- Sidebar -->
+			<slot name="sidebar" />
+
+			<!-- Workbench -->
+			<slot name="main" />
+		</div>
+
+		<!-- Footer -->
+		<slot name="footer" />
+	</div>
+</Layout>

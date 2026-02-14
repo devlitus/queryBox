@@ -1,7 +1,14 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import AppLayout from "../layouts/AppLayout.astro";
+import HeaderBar from "../components/header/HeaderBar.astro";
+import Sidebar from "../components/sidebar/Sidebar.astro";
+import Workbench from "../components/workbench/Workbench.astro";
+import FooterBar from "../components/footer/FooterBar.astro";
 ---
 
-<Layout>
-	<h1 class="text-4xl">Hello world!</h1>
-</Layout>
+<AppLayout>
+	<HeaderBar slot="header" />
+	<Sidebar slot="sidebar" />
+	<Workbench slot="main" />
+	<FooterBar slot="footer" />
+</AppLayout>

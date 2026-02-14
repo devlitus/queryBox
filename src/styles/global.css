@@ -1,1 +1,132 @@
 @import "tailwindcss";
+
+@theme {
+  /* Background colors */
+  --color-pm-bg-primary: #1C1C1C;
+  --color-pm-bg-secondary: #212121;
+  --color-pm-bg-tertiary: #2C2C2C;
+  --color-pm-bg-elevated: #333333;
+  --color-pm-bg-header: #1A1A1A;
+
+  /* Border colors */
+  --color-pm-border: #3D3D3D;
+  --color-pm-border-subtle: #2E2E2E;
+
+  /* Text colors */
+  --color-pm-text-primary: #E0E0E0;
+  --color-pm-text-secondary: #A0A0A0;
+  --color-pm-text-tertiary: #808080;
+
+  /* Brand/Accent */
+  --color-pm-accent: #FF6C37;
+  --color-pm-accent-hover: #E85D2A;
+
+  /* HTTP Methods */
+  --color-pm-method-get: #61AFFE;
+  --color-pm-method-post: #49CC90;
+  --color-pm-method-put: #FCA130;
+  --color-pm-method-patch: #50E3C2;
+  --color-pm-method-delete: #F93E3E;
+  --color-pm-method-head: #9012FE;
+  --color-pm-method-options: #0D5AA7;
+
+  /* Status codes */
+  --color-pm-status-success: #49CC90;
+  --color-pm-status-redirect: #FCA130;
+  --color-pm-status-error: #F93E3E;
+
+  /* Syntax highlighting */
+  --color-pm-syntax-key: #F97583;
+  --color-pm-syntax-string: #9ECBFF;
+  --color-pm-syntax-number: #79B8FF;
+  --color-pm-syntax-boolean: #FFAB70;
+  --color-pm-syntax-null: #B392F0;
+  --color-pm-syntax-bracket: #E0E0E0;
+
+  /* Typography */
+  --font-pm-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-pm-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+}
+
+/* Base styles */
+body {
+  @apply bg-pm-bg-primary text-pm-text-primary font-pm-sans;
+}
+
+/* Custom scrollbar styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-pm-bg-elevated) var(--color-pm-bg-secondary);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--color-pm-bg-secondary);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--color-pm-bg-elevated);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #404040;
+}
+
+/* Sidebar collapse transition */
+aside {
+  transition: width 200ms ease-in-out;
+}
+
+aside.collapsed {
+  width: 0 !important;
+  overflow: hidden;
+}
+
+/* Mobile sidebar open state */
+aside.mobile-open {
+  transform: translateX(0) !important;
+}
+
+/* Focus visible styles for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid var(--color-pm-accent);
+  outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Responsive utilities */
+@media (max-width: 767px) {
+  /* Mobile: stack layout */
+  aside {
+    position: fixed;
+    top: 48px;
+    left: 0;
+    bottom: 28px;
+    z-index: 40;
+    transform: translateX(-100%);
+    transition: transform 200ms ease-in-out;
+  }
+
+  aside:not(.collapsed) {
+    transform: translateX(0);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Tablet: sidebar overlay */
+  aside.collapsed {
+    width: 0;
+  }
+}
