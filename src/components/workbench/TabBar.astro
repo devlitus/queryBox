@@ -1,0 +1,21 @@
+---
+import TabItem from "./TabItem.astro";
+import plusIcon from "../../assets/icons/plus.svg?raw";
+---
+
+<div class="bg-pm-bg-secondary border-b border-pm-border flex items-center overflow-x-auto">
+	<div class="flex">
+		<TabItem method="GET" name="Get Users" isActive={true} />
+		<TabItem method="POST" name="Create User" />
+		<TabItem method="PUT" name="Update User" isModified={true} />
+	</div>
+	<button
+		type="button"
+		class="px-3 py-2 text-pm-text-secondary hover:text-pm-text-primary transition-colors"
+		aria-label="New tab"
+	>
+		<div class="w-4 h-4">
+			<Fragment set:html={plusIcon} />
+		</div>
+	</button>
+</div>

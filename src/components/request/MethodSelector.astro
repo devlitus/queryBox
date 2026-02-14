@@ -1,0 +1,49 @@
+---
+import chevronDown from "../../assets/icons/chevron-down.svg?raw";
+
+const methods = [
+	{ name: "GET", color: "text-pm-method-get" },
+	{ name: "POST", color: "text-pm-method-post" },
+	{ name: "PUT", color: "text-pm-method-put" },
+	{ name: "PATCH", color: "text-pm-method-patch" },
+	{ name: "DELETE", color: "text-pm-method-delete" },
+	{ name: "HEAD", color: "text-pm-method-head" },
+	{ name: "OPTIONS", color: "text-pm-method-options" },
+];
+---
+
+<pm-dropdown class="relative inline-block">
+	<button
+		type="button"
+		class="inline-flex items-center gap-2 px-3 py-2 bg-pm-bg-tertiary hover:bg-pm-bg-elevated transition-colors text-pm-method-get font-semibold text-sm rounded-l"
+		data-dropdown-trigger
+		aria-haspopup="true"
+		aria-expanded="false"
+	>
+		<span>GET</span>
+		<div class="w-4 h-4 text-pm-text-secondary" aria-hidden="true">
+			<Fragment set:html={chevronDown} />
+		</div>
+	</button>
+
+	<div
+		class="hidden absolute top-full left-0 mt-1 bg-pm-bg-elevated border border-pm-border rounded shadow-lg z-50 min-w-[120px]"
+		data-dropdown-panel
+		role="listbox"
+	>
+		{methods.map((method, index) => (
+			<button
+				type="button"
+				class={`w-full text-left px-4 py-2 hover:bg-pm-bg-tertiary transition-colors ${method.color} font-semibold text-sm`}
+				role="option"
+				aria-selected={index === 0 ? "true" : "false"}
+			>
+				{method.name}
+			</button>
+		))}
+	</div>
+</pm-dropdown>
+
+<script>
+	import "../../scripts/dropdown.ts";
+</script>

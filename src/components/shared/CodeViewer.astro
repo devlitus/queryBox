@@ -1,0 +1,38 @@
+---
+interface Props {
+	code: string;
+	language?: "json" | "javascript" | "text";
+}
+
+const { code, language = "json" } = Astro.props;
+
+// Simple JSON syntax highlighting (server-side)
+function highlightJSON(jsonString: string): string {
+	if (language !== "json") return jsonString;
+
+	try {
+		// Basic regex-based highlighting for JSON
+		let highlighted = jsonString
+			// Keys (property names)
+			.replace(/"([^"]+)"(\s*:)/g, '<span class="text-pm-syntax-key">"$1"</span>$2')
+			// String values
+			.replace(/:\s*"([^"]*)"/g, ': <span class="text-pm-syntax-string">"$1"</span>')
+			// Numbers
+			.replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="text-pm-syntax-number">$1</span>')
+			// Booleans
+			.replace(/:\s*(true|false)/g, ': <span class="text-pm-syntax-boolean">$1</span>')
+			// Null
+			.replace(/:\s*(null)/g, ': <span class="text-pm-syntax-null">$1</span>');
+
+		return highlighted;
+	} catch {
+		return jsonString;
+	}
+}
+
+const highlighted = highlightJSON(code);
+---
+
+<div class="bg-pm-bg-tertiary rounded overflow-x-auto font-pm-mono text-sm">
+	<pre class="p-4"><code set:html={highlighted} /></pre>
+</div>

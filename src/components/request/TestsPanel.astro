@@ -1,0 +1,11 @@
+---
+import CodeViewer from "../shared/CodeViewer.astro";
+import { mockRequest } from "../../data/mock-request";
+---
+
+<div>
+	<p class="text-xs text-pm-text-secondary mb-2">
+		Tests are written in JavaScript and run after the response is received.
+	</p>
+	<CodeViewer code={mockRequest.tests || ""} language="javascript" />
+</div>

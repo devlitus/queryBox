@@ -1,0 +1,11 @@
+---
+import CodeViewer from "../shared/CodeViewer.astro";
+import { mockRequest } from "../../data/mock-request";
+---
+
+<div>
+	<p class="text-xs text-pm-text-secondary mb-2">
+		Pre-request scripts are written in JavaScript and run before the request is sent.
+	</p>
+	<CodeViewer code={mockRequest.preRequestScript || ""} language="javascript" />
+</div>

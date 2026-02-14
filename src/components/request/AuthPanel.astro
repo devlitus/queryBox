@@ -1,0 +1,66 @@
+---
+import chevronDown from "../../assets/icons/chevron-down.svg?raw";
+
+const authTypes = [
+	"No Auth",
+	"API Key",
+	"Bearer Token",
+	"Basic Auth",
+	"OAuth 2.0",
+];
+---
+
+<div class="grid grid-cols-[200px_1fr] gap-4">
+	<!-- Auth type selector -->
+	<div>
+		<label class="block text-xs font-semibold text-pm-text-secondary uppercase mb-2">
+			Type
+		</label>
+		<pm-dropdown class="relative block">
+			<button
+				type="button"
+				class="w-full inline-flex items-center justify-between px-3 py-2 bg-pm-bg-tertiary hover:bg-pm-bg-elevated transition-colors text-sm text-pm-text-primary rounded"
+				data-dropdown-trigger
+				aria-haspopup="true"
+				aria-expanded="false"
+			>
+				<span>Bearer Token</span>
+				<div class="w-4 h-4 text-pm-text-secondary" aria-hidden="true">
+					<Fragment set:html={chevronDown} />
+				</div>
+			</button>
+			<div
+				class="hidden absolute top-full left-0 mt-1 w-full bg-pm-bg-elevated border border-pm-border rounded shadow-lg z-50"
+				data-dropdown-panel
+				role="listbox"
+			>
+				{authTypes.map((type, index) => (
+					<button
+						type="button"
+						class="w-full text-left px-3 py-2 hover:bg-pm-bg-tertiary transition-colors text-sm text-pm-text-primary"
+						role="option"
+						aria-selected={index === 2 ? "true" : "false"}
+					>
+						{type}
+					</button>
+				))}
+			</div>
+		</pm-dropdown>
+	</div>
+
+	<!-- Auth configuration -->
+	<div>
+		<label class="block text-xs font-semibold text-pm-text-secondary uppercase mb-2">
+			Token
+		</label>
+		<input
+			type="text"
+			value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+			class="w-full px-3 py-2 bg-pm-bg-tertiary border border-pm-border rounded text-sm text-pm-text-primary focus:outline-none focus:border-pm-accent"
+		/>
+	</div>
+</div>
+
+<script>
+	import "../../scripts/dropdown.ts";
+</script>

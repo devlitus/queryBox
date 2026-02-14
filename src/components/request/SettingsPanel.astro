@@ -1,0 +1,25 @@
+---
+import Toggle from "../shared/Toggle.astro";
+import { mockRequest } from "../../data/mock-request";
+---
+
+<div class="space-y-4">
+	<div>
+		<h3 class="text-sm font-semibold text-pm-text-primary mb-3">Request Settings</h3>
+		<div class="space-y-3">
+			<Toggle checked={mockRequest.settings.followRedirects} label="Automatically follow redirects" />
+			<Toggle checked={mockRequest.settings.enableSSL} label="Enable SSL certificate verification" />
+		</div>
+	</div>
+
+	<div>
+		<label class="block text-sm font-semibold text-pm-text-primary mb-2">
+			Request timeout (ms)
+		</label>
+		<input
+			type="number"
+			value={mockRequest.settings.timeout}
+			class="w-48 px-3 py-2 bg-pm-bg-tertiary border border-pm-border rounded text-sm text-pm-text-primary focus:outline-none focus:border-pm-accent"
+		/>
+	</div>
+</div>

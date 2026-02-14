@@ -1,0 +1,23 @@
+---
+interface Props {
+	checked?: boolean;
+	label: string;
+}
+
+const { checked = false, label } = Astro.props;
+---
+
+<label class="inline-flex items-center gap-3 cursor-pointer">
+	<div class="relative">
+		<input type="checkbox" checked={checked} class="sr-only peer" />
+		<div
+			class="w-11 h-6 bg-pm-bg-elevated rounded-full peer peer-checked:bg-pm-accent transition-colors"
+		>
+		</div>
+		<div
+			class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"
+		>
+		</div>
+	</div>
+	<span class="text-sm text-pm-text-primary">{label}</span>
+</label>

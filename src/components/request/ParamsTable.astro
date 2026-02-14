@@ -1,0 +1,13 @@
+---
+import KeyValueTable from "../shared/KeyValueTable.astro";
+import { mockRequest } from "../../data/mock-request";
+
+const params = mockRequest.params.map((p) => ({
+	key: p.key,
+	value: p.value,
+	description: p.description,
+	enabled: p.enabled,
+}));
+---
+
+<KeyValueTable items={params} showDescription={true} />
