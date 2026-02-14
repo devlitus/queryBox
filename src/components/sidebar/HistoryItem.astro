@@ -1,0 +1,44 @@
+---
+import type { HttpMethod } from "../../data/mock-collections";
+import Badge from "../shared/Badge.astro";
+
+interface Props {
+	method: HttpMethod;
+	url: string;
+	timestamp: Date;
+	status: number;
+}
+
+const { method, url, timestamp, status } = Astro.props;
+
+// Format timestamp as relative time
+function getRelativeTime(date: Date): string {
+	const now = new Date();
+	const diffMs = now.getTime() - date.getTime();
+	const diffMins = Math.floor(diffMs / (1000 * 60));
+	const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+	if (diffMins < 1) return "Just now";
+	if (diffMins < 60) return `${diffMins}m ago`;
+	if (diffHours < 24) return `${diffHours}h ago`;
+	if (diffDays < 2) return "Yesterday";
+	return `${diffDays}d ago`;
+}
+
+const relativeTime = getRelativeTime(timestamp);
+
+// Truncate URL
+const maxLength = 30;
+const truncatedUrl = url.length > maxLength ? url.substring(0, maxLength) + "..." : url;
+---
+
+<div
+	class="flex items-center gap-2 px-3 py-1.5 hover:bg-pm-bg-elevated cursor-pointer transition-colors rounded"
+>
+	<Badge text={method} variant="method" />
+	<div class="flex-1 min-w-0">
+		<div class="text-sm text-pm-text-primary truncate">{truncatedUrl}</div>
+		<div class="text-xs text-pm-text-tertiary">{relativeTime} • {status}</div>
+	</div>
+</div>

@@ -1,0 +1,43 @@
+---
+import SidebarTabs from "./SidebarTabs.astro";
+import CollectionTree from "./CollectionTree.astro";
+import EnvironmentList from "./EnvironmentList.astro";
+import HistoryList from "./HistoryList.astro";
+---
+
+<aside class="fixed lg:relative inset-y-0 left-0 z-50 w-64 bg-pm-bg-secondary border-r border-pm-border flex flex-col overflow-hidden -translate-x-full lg:translate-x-0 transition-transform duration-300" role="navigation" aria-label="Sidebar navigation">
+	<SidebarTabs>
+		<!-- Collections panel -->
+		<div
+			id="tabpanel-collections"
+			data-panel="collections"
+			role="tabpanel"
+			aria-labelledby="tab-collections"
+			class="flex-1 overflow-y-auto p-2"
+		>
+			<CollectionTree />
+		</div>
+
+		<!-- Environments panel -->
+		<div
+			id="tabpanel-environments"
+			data-panel="environments"
+			role="tabpanel"
+			aria-labelledby="tab-environments"
+			class="hidden flex-1 overflow-y-auto p-2"
+		>
+			<EnvironmentList />
+		</div>
+
+		<!-- History panel -->
+		<div
+			id="tabpanel-history"
+			data-panel="history"
+			role="tabpanel"
+			aria-labelledby="tab-history"
+			class="hidden flex-1 overflow-y-auto p-2"
+		>
+			<HistoryList />
+		</div>
+	</SidebarTabs>
+</aside>

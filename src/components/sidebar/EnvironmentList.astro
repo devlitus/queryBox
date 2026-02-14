@@ -1,0 +1,10 @@
+---
+import { mockEnvironments, activeEnvironmentId } from "../../data/mock-environments";
+import EnvironmentItem from "./EnvironmentItem.astro";
+---
+
+<div class="py-2">
+	{mockEnvironments.map((env) => (
+		<EnvironmentItem name={env.name} isActive={env.id === activeEnvironmentId} />
+	))}
+</div>

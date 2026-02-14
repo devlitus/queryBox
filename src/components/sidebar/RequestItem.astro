@@ -1,0 +1,21 @@
+---
+import type { HttpMethod } from "../../data/mock-collections";
+import Badge from "../shared/Badge.astro";
+
+interface Props {
+	method: HttpMethod;
+	name: string;
+	level?: number;
+}
+
+const { method, name, level = 3 } = Astro.props;
+---
+
+<div
+	class="flex items-center gap-2 px-3 py-1.5 hover:bg-pm-bg-elevated cursor-pointer transition-colors rounded"
+	role="treeitem"
+	aria-level={level}
+>
+	<Badge text={method} variant="method" />
+	<span class="text-sm text-pm-text-primary truncate">{name}</span>
+</div>

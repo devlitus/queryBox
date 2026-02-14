@@ -1,0 +1,22 @@
+---
+import environmentIcon from "../../assets/icons/environment.svg?raw";
+
+interface Props {
+	name: string;
+	isActive: boolean;
+}
+
+const { name, isActive } = Astro.props;
+---
+
+<div
+	class="flex items-center gap-2 px-3 py-2 hover:bg-pm-bg-elevated cursor-pointer transition-colors rounded"
+>
+	<div class="w-4 h-4 text-pm-text-secondary">
+		<Fragment set:html={environmentIcon} />
+	</div>
+	<span class="text-sm text-pm-text-primary flex-1">{name}</span>
+	{isActive && (
+		<div class="w-2 h-2 rounded-full bg-pm-status-success" aria-label="Active environment" />
+	)}
+</div>

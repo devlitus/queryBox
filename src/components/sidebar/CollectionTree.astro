@@ -1,0 +1,14 @@
+---
+import { mockCollections } from "../../data/mock-collections";
+import CollectionItem from "./CollectionItem.astro";
+---
+
+<pm-tree class="block" role="tree">
+	{mockCollections.map((collection) => (
+		<CollectionItem collection={collection} />
+	))}
+</pm-tree>
+
+<script>
+	import "../../scripts/tree.ts";
+</script>

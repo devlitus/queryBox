@@ -1,0 +1,68 @@
+---
+import plusIcon from "../../assets/icons/plus.svg?raw";
+---
+
+<pm-tabs class="block">
+	<div
+		class="flex items-center justify-between border-b border-pm-border"
+		role="tablist"
+	>
+		<div class="flex">
+			<button
+				type="button"
+				class="px-4 py-2 text-sm font-medium text-pm-text-primary border-b-2 border-pm-accent active"
+				role="tab"
+				data-tab="collections"
+				aria-selected="true"
+				aria-controls="tabpanel-collections"
+				tabindex="0"
+			>
+				Collections
+			</button>
+			<button
+				type="button"
+				class="px-4 py-2 text-sm font-medium text-pm-text-secondary hover:text-pm-text-primary border-b-2 border-transparent"
+				role="tab"
+				data-tab="environments"
+				aria-selected="false"
+				aria-controls="tabpanel-environments"
+				tabindex="-1"
+			>
+				Environments
+			</button>
+			<button
+				type="button"
+				class="px-4 py-2 text-sm font-medium text-pm-text-secondary hover:text-pm-text-primary border-b-2 border-transparent"
+				role="tab"
+				data-tab="history"
+				aria-selected="false"
+				aria-controls="tabpanel-history"
+				tabindex="-1"
+			>
+				History
+			</button>
+		</div>
+		<button
+			type="button"
+			class="w-8 h-8 mr-2 inline-flex items-center justify-center rounded hover:bg-pm-bg-elevated transition-colors text-pm-text-secondary"
+			aria-label="Create new"
+		>
+			<div class="w-4 h-4" aria-hidden="true">
+				<Fragment set:html={plusIcon} />
+			</div>
+		</button>
+	</div>
+
+	<slot />
+</pm-tabs>
+
+<script>
+	import "../../scripts/tabs.ts";
+</script>
+
+<style>
+	button[data-tab].active {
+		color: var(--color-pm-text-primary);
+		border-color: var(--color-pm-accent);
+	}
+</style>

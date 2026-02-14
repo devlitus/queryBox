@@ -1,0 +1,41 @@
+---
+import type { Collection } from "../../data/mock-collections";
+import FolderItem from "./FolderItem.astro";
+import RequestItem from "./RequestItem.astro";
+import collectionIcon from "../../assets/icons/collection.svg?raw";
+import chevronRight from "../../assets/icons/chevron-right.svg?raw";
+
+interface Props {
+	collection: Collection;
+}
+
+const { collection } = Astro.props;
+const toggleId = `collection-${collection.id}`;
+---
+
+<div class="mb-2" role="treeitem" aria-level="1">
+	<button
+		type="button"
+		class="flex items-center gap-2 px-3 py-1.5 w-full hover:bg-pm-bg-elevated cursor-pointer transition-colors rounded text-left"
+		data-tree-toggle={toggleId}
+		aria-expanded="true"
+	>
+		<div class="w-4 h-4 text-pm-text-secondary transition-transform" data-chevron style="transform: rotate(90deg)" aria-hidden="true">
+			<Fragment set:html={chevronRight} />
+		</div>
+		<div class="w-4 h-4 text-pm-text-secondary" aria-hidden="true">
+			<Fragment set:html={collectionIcon} />
+		</div>
+		<span class="text-sm font-medium text-pm-text-primary">{collection.name}</span>
+	</button>
+	<div data-tree-content={toggleId}>
+		{collection.folders.map((folder) => (
+			<FolderItem folder={folder} />
+		))}
+		{collection.requests.map((req) => (
+			<div class="ml-4">
+				<RequestItem method={req.method} name={req.name} level={2} />
+			</div>
+		))}
+	</div>
+</div>

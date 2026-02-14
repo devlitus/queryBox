@@ -1,0 +1,35 @@
+---
+import type { Folder } from "../../data/mock-collections";
+import RequestItem from "./RequestItem.astro";
+import folderIcon from "../../assets/icons/folder.svg?raw";
+import chevronRight from "../../assets/icons/chevron-right.svg?raw";
+
+interface Props {
+	folder: Folder;
+}
+
+const { folder } = Astro.props;
+const toggleId = `folder-${folder.id}`;
+---
+
+<div class="ml-4" role="treeitem" aria-level="2">
+	<button
+		type="button"
+		class="flex items-center gap-2 px-3 py-1.5 w-full hover:bg-pm-bg-elevated cursor-pointer transition-colors rounded text-left"
+		data-tree-toggle={toggleId}
+		aria-expanded="true"
+	>
+		<div class="w-4 h-4 text-pm-text-secondary transition-transform" data-chevron style="transform: rotate(90deg)" aria-hidden="true">
+			<Fragment set:html={chevronRight} />
+		</div>
+		<div class="w-4 h-4 text-pm-text-secondary" aria-hidden="true">
+			<Fragment set:html={folderIcon} />
+		</div>
+		<span class="text-sm text-pm-text-primary">{folder.name}</span>
+	</button>
+	<div data-tree-content={toggleId} class="ml-6">
+		{folder.requests.map((req) => (
+			<RequestItem method={req.method} name={req.name} level={3} />
+		))}
+	</div>
+</div>
