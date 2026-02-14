@@ -1,0 +1,48 @@
+---
+import CodeViewer from "../shared/CodeViewer.astro";
+import { mockResponse } from "../../data/mock-response";
+---
+
+<div>
+	<!-- View options -->
+	<div class="flex items-center justify-between mb-4">
+		<div class="flex items-center gap-3">
+			<label class="inline-flex items-center gap-2 cursor-pointer">
+				<input
+					type="radio"
+					name="view-mode"
+					value="pretty"
+					checked
+					class="text-pm-accent"
+				/>
+				<span class="text-sm text-pm-text-primary">Pretty</span>
+			</label>
+			<label class="inline-flex items-center gap-2 cursor-pointer">
+				<input type="radio" name="view-mode" value="raw" class="text-pm-accent" />
+				<span class="text-sm text-pm-text-primary">Raw</span>
+			</label>
+			<label class="inline-flex items-center gap-2 cursor-pointer">
+				<input type="radio" name="view-mode" value="preview" class="text-pm-accent" />
+				<span class="text-sm text-pm-text-primary">Preview</span>
+			</label>
+		</div>
+
+		<div class="flex items-center gap-2">
+			<button
+				type="button"
+				class="px-3 py-1.5 text-xs bg-pm-bg-tertiary hover:bg-pm-bg-elevated transition-colors text-pm-text-primary rounded"
+			>
+				Copy
+			</button>
+			<button
+				type="button"
+				class="px-3 py-1.5 text-xs bg-pm-bg-tertiary hover:bg-pm-bg-elevated transition-colors text-pm-text-primary rounded"
+			>
+				Search
+			</button>
+		</div>
+	</div>
+
+	<!-- Response body -->
+	<CodeViewer code={mockResponse.body} language="json" />
+</div>

@@ -1,0 +1,32 @@
+---
+import { mockResponse } from "../../data/mock-response";
+---
+
+<div class="bg-pm-bg-tertiary rounded overflow-x-auto">
+	<table class="w-full text-sm">
+		<thead>
+			<tr class="border-b border-pm-border-subtle">
+				<th class="px-4 py-2 text-left text-xs font-semibold text-pm-text-secondary uppercase">Name</th>
+				<th class="px-4 py-2 text-left text-xs font-semibold text-pm-text-secondary uppercase">Value</th>
+				<th class="px-4 py-2 text-left text-xs font-semibold text-pm-text-secondary uppercase">Domain</th>
+				<th class="px-4 py-2 text-left text-xs font-semibold text-pm-text-secondary uppercase">Path</th>
+				<th class="px-4 py-2 text-left text-xs font-semibold text-pm-text-secondary uppercase">Expires</th>
+				<th class="px-4 py-2 text-left text-xs font-semibold text-pm-text-secondary uppercase">HttpOnly</th>
+				<th class="px-4 py-2 text-left text-xs font-semibold text-pm-text-secondary uppercase">Secure</th>
+			</tr>
+		</thead>
+		<tbody>
+			{mockResponse.cookies.map((cookie) => (
+				<tr class="hover:bg-pm-bg-secondary transition-colors">
+					<td class="px-4 py-2 text-pm-text-primary font-medium">{cookie.name}</td>
+					<td class="px-4 py-2 text-pm-text-secondary font-pm-mono">{cookie.value}</td>
+					<td class="px-4 py-2 text-pm-text-secondary">{cookie.domain}</td>
+					<td class="px-4 py-2 text-pm-text-secondary">{cookie.path}</td>
+					<td class="px-4 py-2 text-pm-text-secondary">{cookie.expires}</td>
+					<td class="px-4 py-2 text-pm-text-secondary">{cookie.httpOnly ? "✓" : "-"}</td>
+					<td class="px-4 py-2 text-pm-text-secondary">{cookie.secure ? "✓" : "-"}</td>
+				</tr>
+			))}
+		</tbody>
+	</table>
+</div>

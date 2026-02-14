@@ -1,0 +1,40 @@
+---
+import ResponseStatusBar from "./ResponseStatusBar.astro";
+import ResponseTabs from "./ResponseTabs.astro";
+import ResponseBody from "./ResponseBody.astro";
+import ResponseHeaders from "./ResponseHeaders.astro";
+import ResponseCookies from "./ResponseCookies.astro";
+import ResponseTestResults from "./ResponseTestResults.astro";
+import { mockResponse } from "../../data/mock-response";
+---
+
+<div class="flex flex-col border-t-2 border-pm-border">
+	<ResponseStatusBar
+		status={mockResponse.status}
+		statusText={mockResponse.statusText}
+		time={mockResponse.time}
+		size={mockResponse.size}
+	/>
+
+	<ResponseTabs>
+		<!-- Body panel -->
+		<div id="tabpanel-body" data-panel="body" role="tabpanel" class="p-4">
+			<ResponseBody />
+		</div>
+
+		<!-- Cookies panel -->
+		<div id="tabpanel-cookies" data-panel="cookies" role="tabpanel" class="hidden p-4">
+			<ResponseCookies />
+		</div>
+
+		<!-- Headers panel -->
+		<div id="tabpanel-headers" data-panel="headers" role="tabpanel" class="hidden p-4">
+			<ResponseHeaders />
+		</div>
+
+		<!-- Test Results panel -->
+		<div id="tabpanel-test-results" data-panel="test-results" role="tabpanel" class="hidden p-4">
+			<ResponseTestResults />
+		</div>
+	</ResponseTabs>
+</div>
