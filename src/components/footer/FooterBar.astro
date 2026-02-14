@@ -1,0 +1,52 @@
+---
+import trashIcon from "../../assets/icons/trash.svg?raw";
+---
+
+<footer class="h-7 bg-pm-bg-header border-t border-pm-border px-4 flex items-center justify-between text-xs text-pm-text-secondary">
+	<!-- Left section -->
+	<div class="flex items-center gap-3">
+		<button
+			type="button"
+			class="hover:text-pm-text-primary transition-colors"
+		>
+			Find and Replace
+		</button>
+		<button
+			type="button"
+			class="hover:text-pm-text-primary transition-colors"
+		>
+			Console
+		</button>
+	</div>
+
+	<!-- Right section -->
+	<div class="flex items-center gap-3">
+		<button
+			type="button"
+			class="hover:text-pm-text-primary transition-colors"
+		>
+			Runner
+		</button>
+		<button
+			type="button"
+			class="inline-flex items-center justify-center w-5 h-5 hover:text-pm-text-primary transition-colors"
+			aria-label="Trash"
+		>
+			<div class="w-4 h-4">
+				<Fragment set:html={trashIcon} />
+			</div>
+		</button>
+		<pm-sidebar-toggle
+			is="button"
+			class="hover:text-pm-text-primary transition-colors cursor-pointer"
+			aria-label="Toggle sidebar"
+			aria-expanded="true"
+		>
+			⋮⋮
+		</pm-sidebar-toggle>
+	</div>
+</footer>
+
+<script>
+	import "../../scripts/sidebar.ts";
+</script>

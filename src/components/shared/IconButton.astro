@@ -1,0 +1,33 @@
+---
+interface Props {
+	icon: string;
+	label: string;
+	size?: "sm" | "md";
+	variant?: "ghost" | "default";
+	class?: string;
+}
+
+const { icon, label, size = "md", variant = "ghost", class: className = "" } = Astro.props;
+
+const sizeClasses = {
+	sm: "w-6 h-6 p-1",
+	md: "w-8 h-8 p-1.5",
+};
+
+const variantClasses = {
+	ghost: "hover:bg-pm-bg-elevated",
+	default: "bg-pm-bg-tertiary hover:bg-pm-bg-elevated",
+};
+---
+
+<button
+	type="button"
+	class={`inline-flex items-center justify-center rounded transition-colors ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
+	aria-label={label}
+>
+	<slot>
+		<span class="w-full h-full">
+			{icon}
+		</span>
+	</slot>
+</button>

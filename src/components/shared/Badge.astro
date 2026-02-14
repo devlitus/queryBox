@@ -1,0 +1,47 @@
+---
+interface Props {
+	text: string;
+	variant: "method" | "status";
+	class?: string;
+}
+
+const { text, variant, class: className = "" } = Astro.props;
+
+// Default color mapping for methods
+const methodColors: Record<string, string> = {
+	GET: "text-pm-method-get bg-pm-method-get/10",
+	POST: "text-pm-method-post bg-pm-method-post/10",
+	PUT: "text-pm-method-put bg-pm-method-put/10",
+	PATCH: "text-pm-method-patch bg-pm-method-patch/10",
+	DELETE: "text-pm-method-delete bg-pm-method-delete/10",
+	HEAD: "text-pm-method-head bg-pm-method-head/10",
+	OPTIONS: "text-pm-method-options bg-pm-method-options/10",
+};
+
+// Status color mapping
+const statusColors: Record<string, string> = {
+	"200": "text-pm-status-success bg-pm-status-success/10",
+	"201": "text-pm-status-success bg-pm-status-success/10",
+	"204": "text-pm-status-success bg-pm-status-success/10",
+	"301": "text-pm-status-redirect bg-pm-status-redirect/10",
+	"302": "text-pm-status-redirect bg-pm-status-redirect/10",
+	"400": "text-pm-status-error bg-pm-status-error/10",
+	"401": "text-pm-status-error bg-pm-status-error/10",
+	"403": "text-pm-status-error bg-pm-status-error/10",
+	"404": "text-pm-status-error bg-pm-status-error/10",
+	"500": "text-pm-status-error bg-pm-status-error/10",
+};
+
+const colorClass =
+	variant === "method"
+		? methodColors[text] || ""
+		: variant === "status"
+			? statusColors[text] || "text-pm-text-secondary bg-pm-bg-elevated"
+			: "";
+---
+
+<span
+	class={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${colorClass} ${className}`}
+>
+	{text}
+</span>

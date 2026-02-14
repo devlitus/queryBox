@@ -1,0 +1,14 @@
+---
+import searchIcon from "../../assets/icons/search.svg?raw";
+---
+
+<div class="relative flex-1 max-w-md" role="search">
+	<div class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-pm-text-tertiary">
+		<Fragment set:html={searchIcon} />
+	</div>
+	<input
+		type="search"
+		placeholder="Search Postman"
+		class="w-full h-8 pl-10 pr-4 bg-pm-bg-tertiary border border-pm-border rounded text-sm text-pm-text-primary placeholder:text-pm-text-tertiary focus:outline-none focus:border-pm-accent transition-colors"
+	/>
+</div>
