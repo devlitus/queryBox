@@ -1,11 +1,9 @@
 ---
-import CodeViewer from "../shared/CodeViewer.astro";
-import { mockRequest } from "../../data/mock-request";
+// Pre-request scripts are out of MVP scope.
 ---
 
 <div>
 	<p class="text-xs text-pm-text-secondary mb-2">
-		Pre-request scripts are written in JavaScript and run before the request is sent.
+		Pre-request scripts are out of MVP scope.
 	</p>
-	<CodeViewer code={mockRequest.preRequestScript || ""} language="javascript" />
 </div>

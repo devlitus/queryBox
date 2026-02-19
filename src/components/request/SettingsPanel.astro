@@ -1,14 +1,14 @@
 ---
 import Toggle from "../shared/Toggle.astro";
-import { mockRequest } from "../../data/mock-request";
+// Settings panel: out of MVP scope. Default values shown.
 ---
 
 <div class="space-y-4">
 	<div>
 		<h3 class="text-sm font-semibold text-pm-text-primary mb-3">Request Settings</h3>
 		<div class="space-y-3">
-			<Toggle checked={mockRequest.settings.followRedirects} label="Automatically follow redirects" />
-			<Toggle checked={mockRequest.settings.enableSSL} label="Enable SSL certificate verification" />
+			<Toggle checked={true} label="Automatically follow redirects" />
+			<Toggle checked={true} label="Enable SSL certificate verification" />
 		</div>
 	</div>
 
@@ -18,7 +18,7 @@ import { mockRequest } from "../../data/mock-request";
 		</label>
 		<input
 			type="number"
-			value={mockRequest.settings.timeout}
+			value={10000}
 			class="w-48 px-3 py-2 bg-pm-bg-tertiary border border-pm-border rounded text-sm text-pm-text-primary focus:outline-none focus:border-pm-accent"
 		/>
 	</div>
