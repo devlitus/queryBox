@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "mcp__MCP_DOCKER__search_astro_docs",
+      "WebSearch",
+      "mcp__MCP_DOCKER__fetch",
+      "Bash(bun astro check:*)",
+      "Bash(bun build:*)",
+      "Bash(bun run build:*)",
+      "Bash(bun dev:*)",
+      "Bash(bun astro build:*)",
+      "mcp__MCP_DOCKER__resolve-library-id",
+      "mcp__MCP_DOCKER__get-library-docs",
+      "Bash(git commit:*)"
+    ]
+  }
+}
