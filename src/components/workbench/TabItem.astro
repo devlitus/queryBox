@@ -1,10 +1,10 @@
 ---
-import type { HttpMethod } from "../../data/mock-collections";
+import type { HttpMethod } from "../../types/http";
 import Badge from "../shared/Badge.astro";
 import closeIcon from "../../assets/icons/close.svg?raw";
 
 interface Props {
-	method: HttpMethod;
+	method?: HttpMethod;
 	name: string;
 	isActive?: boolean;
 	isModified?: boolean;
@@ -19,7 +19,7 @@ const { method, name, isActive = false, isModified = false } = Astro.props;
 		${isActive ? "bg-pm-bg-primary border-b-2 border-b-pm-accent" : "bg-pm-bg-secondary hover:bg-pm-bg-elevated"}
 	`}
 >
-	<Badge text={method} variant="method" />
+	{method && <Badge text={method} variant="method" />}
 	<span class="text-sm text-pm-text-primary">{name}</span>
 	{isModified && (
 		<div class="w-1.5 h-1.5 rounded-full bg-pm-accent" aria-label="Modified" />

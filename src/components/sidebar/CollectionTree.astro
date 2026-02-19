@@ -1,14 +1,8 @@
 ---
-import { mockCollections } from "../../data/mock-collections";
-import CollectionItem from "./CollectionItem.astro";
+// Collections feature is out of MVP scope.
+// Mock data removed; shows empty state placeholder.
 ---
 
-<pm-tree class="block" role="tree">
-	{mockCollections.map((collection) => (
-		<CollectionItem collection={collection} />
-	))}
-</pm-tree>
-
-<script>
-	import "../../scripts/tree.ts";
-</script>
+<div class="py-4 px-3 text-sm text-pm-text-tertiary text-center">
+	No collections yet.
+</div>

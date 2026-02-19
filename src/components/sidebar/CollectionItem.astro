@@ -1,9 +1,29 @@
 ---
-import type { Collection } from "../../data/mock-collections";
+import type { HttpMethod } from "../../types/http";
 import FolderItem from "./FolderItem.astro";
 import RequestItem from "./RequestItem.astro";
 import collectionIcon from "../../assets/icons/collection.svg?raw";
 import chevronRight from "../../assets/icons/chevron-right.svg?raw";
+
+interface SidebarRequest {
+	id: string;
+	name: string;
+	method: HttpMethod;
+	url: string;
+}
+
+interface SidebarFolder {
+	id: string;
+	name: string;
+	requests: SidebarRequest[];
+}
+
+interface Collection {
+	id: string;
+	name: string;
+	folders: SidebarFolder[];
+	requests: SidebarRequest[];
+}
 
 interface Props {
 	collection: Collection;

@@ -1,32 +1,11 @@
 ---
 import TabBar from "./TabBar.astro";
-import RequestPanel from "../request/RequestPanel.astro";
-import ResponsePanel from "../response/ResponsePanel.astro";
+import HttpWorkbench from "./HttpWorkbench.tsx";
 ---
 
 <main class="flex flex-col bg-pm-bg-primary overflow-hidden">
 	<TabBar />
-	<div class="flex-1 flex flex-col overflow-y-auto">
-		<!-- Request panel -->
-		<div class="flex-1 overflow-y-auto">
-			<RequestPanel />
-		</div>
-
-		<!-- Visual resize handle -->
-		<div
-			class="h-1 bg-pm-bg-secondary hover:bg-pm-accent/30 cursor-row-resize flex items-center justify-center transition-colors"
-			aria-label="Resize handle"
-		>
-			<div class="flex gap-1">
-				<div class="w-1 h-1 rounded-full bg-pm-text-tertiary"></div>
-				<div class="w-1 h-1 rounded-full bg-pm-text-tertiary"></div>
-				<div class="w-1 h-1 rounded-full bg-pm-text-tertiary"></div>
-			</div>
-		</div>
-
-		<!-- Response panel -->
-		<div class="flex-1 overflow-y-auto">
-			<ResponsePanel />
-		</div>
+	<div class="flex-1 flex flex-col overflow-hidden">
+		<HttpWorkbench client:load />
 	</div>
 </main>

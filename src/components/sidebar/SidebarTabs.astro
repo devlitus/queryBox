@@ -7,10 +7,10 @@ import plusIcon from "../../assets/icons/plus.svg?raw";
 		class="flex items-center justify-between border-b border-pm-border"
 		role="tablist"
 	>
-		<div class="flex">
+		<div class="flex overflow-x-scroll tabs-container">
 			<button
 				type="button"
-				class="px-4 py-2 text-sm font-medium text-pm-text-primary border-b-2 border-pm-accent active"
+				class="px-4 py-2 text-sm font-medium text-pm-text-primary border-b-2 border-pm-accent active tab-button"
 				role="tab"
 				data-tab="collections"
 				aria-selected="true"
@@ -21,7 +21,7 @@ import plusIcon from "../../assets/icons/plus.svg?raw";
 			</button>
 			<button
 				type="button"
-				class="px-4 py-2 text-sm font-medium text-pm-text-secondary hover:text-pm-text-primary border-b-2 border-transparent"
+				class="px-4 py-2 text-sm font-medium text-pm-text-secondary hover:text-pm-text-primary border-b-2 border-transparent tab-button"
 				role="tab"
 				data-tab="environments"
 				aria-selected="false"
@@ -32,7 +32,7 @@ import plusIcon from "../../assets/icons/plus.svg?raw";
 			</button>
 			<button
 				type="button"
-				class="px-4 py-2 text-sm font-medium text-pm-text-secondary hover:text-pm-text-primary border-b-2 border-transparent"
+				class="px-4 py-2 text-sm font-medium text-pm-text-secondary hover:text-pm-text-primary border-b-2 border-transparent tab-button"
 				role="tab"
 				data-tab="history"
 				aria-selected="false"
@@ -65,4 +65,38 @@ import plusIcon from "../../assets/icons/plus.svg?raw";
 		color: var(--color-pm-text-primary);
 		border-color: var(--color-pm-accent);
 	}
+
+	.tabs-container {
+		scroll-behavior: smooth;
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+	}
+
+	.tabs-container::-webkit-scrollbar {
+		display: none;
+	}
 </style>
+
+<script>
+	const tabButtons = document.querySelectorAll(".tab-button");
+	const tabsContainer = document.querySelector(".tabs-container") as HTMLElement;
+
+	tabButtons.forEach((button) => {
+		button.addEventListener("click", () => {
+			if (!tabsContainer) return;
+
+			const buttonEl = button as HTMLElement;
+			const buttonWidth = buttonEl.offsetWidth;
+			const containerWidth = tabsContainer.clientWidth;
+			const buttonLeft = buttonEl.offsetLeft;
+
+			// Calcular el scroll necesario para centrar el botón
+			const targetScroll = buttonLeft - (containerWidth - buttonWidth) / 2;
+
+			tabsContainer.scrollTo({
+				left: targetScroll,
+				behavior: "smooth",
+			});
+		});
+	});
+</script>

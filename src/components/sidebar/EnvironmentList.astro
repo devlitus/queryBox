@@ -1,10 +1,8 @@
 ---
-import { mockEnvironments, activeEnvironmentId } from "../../data/mock-environments";
-import EnvironmentItem from "./EnvironmentItem.astro";
+// Environments feature is out of MVP scope.
+// Mock data removed; shows empty state placeholder.
 ---
 
-<div class="py-2">
-	{mockEnvironments.map((env) => (
-		<EnvironmentItem name={env.name} isActive={env.id === activeEnvironmentId} />
-	))}
+<div class="py-4 px-3 text-sm text-pm-text-tertiary text-center">
+	No environments yet.
 </div>
