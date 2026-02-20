@@ -1,46 +1,53 @@
-# Astro Starter Kit: Basics
+# queryBox
 
-```sh
-bun create astro@latest -- --template basics
-```
-
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+A modern web application built with **Astro 5** and **Bun**, featuring TypeScript and a structured agent-driven development workflow.
 
 ## 🚀 Project Structure
 
-Inside of your Astro project, you'll see the following folders and files:
-
 ```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+src/
+├── assets/        # Static assets (images, SVGs)
+├── components/    # Reusable Astro components
+├── layouts/       # Layout components for pages
+└── pages/         # File-based routing
+
+docs/              # Feature documentation and implementation plans
+.claude/           # Agent definitions and memory
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+Learn more at [Astro project structure](https://docs.astro.build/en/basics/project-structure/).
 
 ## 🧞 Commands
 
-All commands are run from the root of the project, from a terminal:
+All commands use Bun:
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `bun install`             | Installs dependencies                            |
-| `bun dev`             | Starts local dev server at `localhost:4321`      |
-| `bun build`           | Build your production site to `./dist/`          |
-| `bun preview`         | Preview your build locally, before deploying     |
-| `bun astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `bun astro -- --help` | Get help using the Astro CLI                     |
+| Command           | Action                                    |
+| :---------------- | :---------------------------------------- |
+| `bun install`     | Install dependencies                      |
+| `bun dev`         | Start dev server at `localhost:4321`      |
+| `bun build`       | Build production site to `./dist/`        |
+| `bun preview`     | Preview production build locally           |
+| `bun astro check` | Check TypeScript and Astro types           |
+| `bun astro add`   | Add integrations (e.g., React, Tailwind)   |
 
-## 👀 Want to learn more?
+## 🏗️ Development Workflow
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+This project uses specialized agents for structured development:
+
+1. **Planning** — The `planner` agent analyzes requirements and creates implementation plans
+2. **Implementation** — The `senior-developer` agent codes the feature exactly as planned
+3. **Review** — The `code-review` agent validates against the plan and standards
+
+Feature plans are stored in `docs/[feature-name]/` with acceptance criteria and technical decisions documented.
+
+## 💻 Stack
+
+- **Framework**: Astro 5
+- **Package Manager**: Bun
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS
+
+## 📚 Documentation
+
+- [Astro Docs](https://docs.astro.build)
+- [TypeScript Config](./tsconfig.json)
