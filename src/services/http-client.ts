@@ -24,6 +24,7 @@ import {
   requestError,
   fullUrl,
 } from "../stores/http-store";
+import { addHistoryEntry } from "../stores/history-store";
 import type { HttpError } from "../types/http";
 
 /** Maximum response body size to display (5 MB). Larger bodies are truncated. */
@@ -153,6 +154,14 @@ export async function sendRequest(): Promise<void> {
         size,
       };
       requestStatus.value = "success";
+    });
+
+    addHistoryEntry({
+      method: state.method,
+      url: url,
+      status: response.status,
+      statusText: response.statusText,
+      requestSnapshot: structuredClone(state),
     });
   } catch (err: unknown) {
     if (signal.aborted) {

@@ -1,5 +1,6 @@
 import RequestPanel from "../request/RequestPanel";
 import ResponsePanel from "../response/ResponsePanel";
+import SaveToCollectionModal from "./SaveToCollectionModal";
 
 export default function HttpWorkbench() {
   return (
@@ -26,6 +27,9 @@ export default function HttpWorkbench() {
       <div class="flex-1 overflow-y-auto">
         <ResponsePanel />
       </div>
+
+      {/* Save to collection modal — portal-rendered above all content */}
+      <SaveToCollectionModal />
     </div>
   );
 }
