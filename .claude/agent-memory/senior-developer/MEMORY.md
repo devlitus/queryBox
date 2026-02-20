@@ -51,3 +51,17 @@
 - `loadRequest()` in http-store regenerates all KeyValuePair IDs to prevent key collisions
 - SaveToCollectionModal: uses `useState` for local form state, reads `collections` signal for select options
 - MethodBadge.tsx: shared Preact component at `src/components/shared/MethodBadge.tsx` — replicates Badge.astro styling for use inside .tsx islands
+
+## Testing Infrastructure (added feature/test-runner)
+
+- Test runner: Vitest v4 + happy-dom, configured via `vitest.config.ts` using `getViteConfig()` from `astro/config`
+- Coverage provider: `@vitest/coverage-v8` (must install separately: `bun add -d @vitest/coverage-v8`)
+- Test scripts: `bun run test`, `bun run test:watch`, `bun run test:coverage`
+- CRITICAL: `bun test` invokes Bun's native runner, NOT Vitest — always use `bun run test`
+- `bunfig.toml` has NO mechanism to redirect `bun test` to a package.json script; only documentation workaround exists
+- Global setup: `src/test/setup.ts` — `afterEach(() => localStorage.clear())`
+- Shared factories: `src/test/factories.ts` — `makeRequestState`, `makeHistoryEntry`, `makeCollection`, `makeSavedRequest`, `makeKeyValuePair`
+- Store test pattern: `vi.resetModules()` + dynamic `import()` in `beforeEach` to reset module-level signals
+- http-store mock pattern: `vi.mock("../services/storage", ...)` to suppress `effect()` auto-persist side effects
+- Coverage exclusions in `vitest.config.ts`: `http-client.ts` and `ui-store.ts` excluded (LOW priority files)
+- `tsconfig.json` has `"types": ["vitest/globals"]` for global `describe/it/expect` without imports

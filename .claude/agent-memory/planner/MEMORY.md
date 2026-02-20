@@ -29,7 +29,7 @@
 - CORS limitation documented; suggest test APIs + future proxy
 - Plan: `docs/http-client/http-client-plan.md`
 
-### Local Persistence (Phase 3) - PLANNED
+### Local Persistence (Phase 3) - COMPLETED
 - localStorage for history (50 max FIFO), collections (flat, no folders), workbench state
 - StorageService abstraction in src/services/storage.ts with qb: key prefix
 - Sidebar panels (History, Collections) converted from .astro placeholders to Preact islands
@@ -68,6 +68,16 @@
 - `@theme` block = design tokens generating utilities
 - Works in .tsx files automatically via Vite plugin
 - Namespaces: --color-*, --font-*, --text-*, --spacing-*, --radius-*
+
+### Test Runner (Phase 4) - PLANNED
+- Vitest chosen over Bun test and Jest (official Astro recommendation)
+- `getViteConfig()` from `astro/config` reuses Vite pipeline in tests
+- happy-dom for DOM simulation (localStorage, crypto, URL)
+- Co-located test files: `*.test.ts` next to source
+- Shared factories in `src/test/factories.ts`
+- Store tests need `vi.resetModules()` due to module-level signal init
+- Coverage: v8 provider, 70% threshold, only utils/services/stores
+- Plan: `docs/test-runner/test-runner-plan.md`
 
 ## Skills Available
 - `ui-design-system`: TailwindCSS + Radix + shadcn/ui patterns
