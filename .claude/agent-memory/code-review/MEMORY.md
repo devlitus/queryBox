@@ -1,221 +1,260 @@
 # Code Review Agent Memory
 
-## Patrones Recurrentes en este Proyecto
+## Recurring Patterns in this Project
 
-### Fase de Implementación Típica
-- Las fases 1-5 (fundación, componentes visuales) suelen implementarse bien
-- Las fases 6-7 (responsividad, accesibilidad) tienden a quedar incompletas o parciales
-- El senior-developer enfoca esfuerzo en componentes visuales antes que en funcionalidad responsive/a11y
+### Typical Implementation Phase
+- Phases 1-5 (foundation, visual components) tend to be implemented well
+- Phases 6-7 (responsiveness, accessibility) tend to be incomplete or partial
+- Senior developer focuses effort on visual components before responsive/a11y functionality
 
-### Issues Comunes de Accesibilidad
+### Common Accessibility Issues
 
-#### ARIA Attributes Faltantes (Patrón recurrente)
-1. **Tabs**: Olvidan `aria-controls` vinculando tab → tabpanel
-2. **Trees**: Olvidan `aria-level` para indicar profundidad en jerarquía
-3. **Dropdowns**: Olvidan `role="listbox"` y `role="option"` en los items del menú
-4. **Iconos decorativos**: No agregan `aria-hidden="true"` a SVGs inline
+#### Missing ARIA Attributes (Recurring Pattern)
+1. **Tabs**: Forget `aria-controls` linking tab → tabpanel
+2. **Trees**: Forget `aria-level` to indicate hierarchy depth
+3. **Dropdowns**: Forget `role="listbox"` and `role="option"` on menu items
+4. **Decorative icons**: Don't add `aria-hidden="true"` to inline SVGs
 
-#### Navegación por Teclado (CRÍTICO - Siempre verificar)
-- Los Custom Elements solo implementan eventos `click`
-- **Nunca implementan** `keydown` handlers para Arrow keys, Enter, Space, Escape
-- Esto es un **bloqueo WCAG 2.1 AA** (criterio 2.1.1)
-- Patrones esperados:
-  - Tabs: ArrowLeft/Right para navegar, Enter/Space para activar
-  - Dropdowns: ArrowUp/Down para navegar opciones, Enter para seleccionar, Escape para cerrar
-  - Trees: ArrowRight (expand), ArrowLeft (collapse), ArrowUp/Down (navegar items)
+#### Keyboard Navigation (CRITICAL - Always verify)
+- Custom Elements only implement `click` events
+- **Never implement** `keydown` handlers for Arrow keys, Enter, Space, Escape
+- This is a **WCAG 2.1 AA blocker** (criterion 2.1.1)
+- Expected patterns:
+  - Tabs: ArrowLeft/Right to navigate, Enter/Space to activate
+  - Dropdowns: ArrowUp/Down to navigate options, Enter to select, Escape to close
+  - Trees: ArrowRight (expand), ArrowLeft (collapse), ArrowUp/Down (navigate items)
 
-### Issues Comunes de Responsividad
+### Common Responsiveness Issues
 
-#### Breakpoints Implementados Solo en CSS
-- El CSS define media queries pero **NO hay cambios en JSX/HTML** para adaptar layout
-- Ejemplo típico: Media query para mobile pero **falta botón hamburguesa en el componente**
+#### Breakpoints Implemented Only in CSS
+- CSS defines media queries but **NO changes in JSX/HTML** to adapt layout
+- Typical example: Media query for mobile but **missing hamburger button in component**
 
-#### RequestBar/Formularios No Stack en Mobile
-- Plan especifica "múltiples líneas en mobile" pero implementación usa solo `flex` sin `flex-col` responsive
-- Necesitan clases Tailwind responsive: `flex md:flex-row flex-col`
+#### RequestBar/Forms Don't Stack on Mobile
+- Plan specifies "multiple lines on mobile" but implementation uses only `flex` without responsive `flex-col`
+- Need responsive Tailwind classes: `flex md:flex-row flex-col`
 
-### Calidad de Código - Patrones Positivos Observados
+### Code Quality - Positive Patterns Observed
 
 #### TypeScript Strict Compliance
-- El proyecto usa `astro/tsconfigs/strict` y el código siempre pasa `bun astro check`
-- Interfaces bien definidas para todos los props y datos mock
-- No se usan tipos `any`
+- Project uses `astro/tsconfigs/strict` and code always passes `bun astro check`
+- Well-defined interfaces for all props and mock data
+- No use of `any` types
 
 #### Custom Elements Pattern
-- Usan guard `if (!customElements.get('name'))` antes de `customElements.define()`
-- Esto previene errores de re-definición
-- Patrón correcto observado en `tabs.ts`, `tree.ts`, `dropdown.ts`, `sidebar.ts`
+- Use guard `if (!customElements.get('name'))` before `customElements.define()`
+- This prevents redefinition errors
+- Correct pattern observed in `tabs.ts`, `tree.ts`, `dropdown.ts`, `sidebar.ts`
 
 #### DRY Compliance
-- Componentes reutilizables bien implementados (KeyValueTable, CodeViewer, Badge)
-- Un solo componente usado en múltiples contextos (ej: KeyValueTable en Params, Headers, Body form-data)
+- Reusable components well implemented (KeyValueTable, CodeViewer, Badge)
+- Single component used in multiple contexts (e.g.: KeyValueTable in Params, Headers, Body form-data)
 
-### Estructura de Archivos vs Plan
+### File Structure vs Plan
 
-- El senior-developer **siempre crea todos los archivos** especificados en el plan
-- A veces crea **más archivos** de los necesarios (ej: 14 iconos vs 6-8 esperados)
-- Nunca faltan archivos estructurales, pero **sí falta funcionalidad dentro** de los archivos
+- Senior developer **always creates all files** specified in the plan
+- Sometimes creates **more files** than necessary (e.g.: 14 icons vs 6-8 expected)
+- Structural files never missing, but **functionality within files is missing**
 
-## Checklist de Revisión Optimizada
+## Optimized Review Checklist
 
-### Fase 1-5 (Usualmente OK)
-- [ ] Verificar `bun astro check` (0 errores)
-- [ ] Verificar `bun build` (exitoso)
-- [ ] Verificar design tokens en `@theme`
-- [ ] Verificar datos mock tienen interfaces TypeScript
-- [ ] Verificar componentes tienen props tipadas
+### Phase 1-5 (Usually OK)
+- [ ] Verify `bun astro check` (0 errors)
+- [ ] Verify `bun build` (successful)
+- [ ] Verify design tokens in `@theme`
+- [ ] Verify mock data has TypeScript interfaces
+- [ ] Verify components have typed props
 
-### Fase 6 (SIEMPRE revisar a fondo)
-- [ ] **Media queries en CSS tienen componentes JSX correspondientes**
-- [ ] Botón hamburguesa existe en mobile/tablet
-- [ ] RequestBar usa clases responsive (`flex-col` en mobile)
-- [ ] Header se simplifica en mobile (búsqueda oculta)
-- [ ] Sidebar tiene backdrop en overlay mode
+### Phase 6 (ALWAYS review thoroughly)
+- [ ] **Media queries in CSS have corresponding JSX components**
+- [ ] Hamburger button exists on mobile/tablet
+- [ ] RequestBar uses responsive classes (`flex-col` on mobile)
+- [ ] Header simplifies on mobile (search hidden)
+- [ ] Sidebar has backdrop in overlay mode
 
-### Fase 7 (SIEMPRE revisar a fondo)
-- [ ] **Navegación por teclado implementada** en todos los Custom Elements
-- [ ] `aria-controls` en tabs vincula a paneles
-- [ ] `aria-level` en trees indica profundidad
-- [ ] `role="listbox"` y `role="option"` en dropdowns
-- [ ] `aria-hidden="true"` en todos los iconos decorativos
-- [ ] Focus trap en modales/dropdowns abiertos
-- [ ] Contraste de colores verificado (usar devtools)
+### Phase 7 (ALWAYS review thoroughly)
+- [ ] **Keyboard navigation implemented** in all Custom Elements
+- [ ] `aria-controls` on tabs links to panels
+- [ ] `aria-level` on trees indicates depth
+- [ ] `role="listbox"` and `role="option"` on dropdowns
+- [ ] `aria-hidden="true"` on all decorative icons
+- [ ] Focus trap in open modals/dropdowns
+- [ ] Color contrast verified (use devtools)
 
-## Severidad de Issues - Criterios
+## Issue Severity - Criteria
 
-### ALTA (Bloquea aprobación)
-1. Plan requirements no implementados (funcionalidad completa faltante)
-2. Navegación por teclado ausente (WCAG 2.1.1 violation)
-3. Responsividad no funcional en breakpoints especificados
-4. Errores TypeScript (`bun astro check` falla)
-5. Build falla
+### HIGH (Blocks approval)
+1. Plan requirements not implemented (complete functionality missing)
+2. Keyboard navigation missing (WCAG 2.1.1 violation)
+3. Responsiveness not functional on specified breakpoints
+4. TypeScript errors (`bun astro check` fails)
+5. Build fails
 
-### MEDIA (Bloquea aprobación)
-1. ARIA attributes faltantes que afectan lectores de pantalla
-2. Contraste de colores < 4.5:1 para texto normal
-3. Semántica HTML incorrecta (ej: `<div>` con `cursor-pointer` en lugar de `<button>`)
-4. Performance issues evidentes (bundle size, re-renders)
-5. Edge cases no manejados que el plan implica
+### MEDIUM (Blocks approval)
+1. Missing ARIA attributes affecting screen readers
+2. Color contrast < 4.5:1 for normal text
+3. Incorrect HTML semantics (e.g.: `<div>` with `cursor-pointer` instead of `<button>`)
+4. Evident performance issues (bundle size, re-renders)
+5. Unhandled edge cases that plan implies
 
-### BAJA (No bloquea aprobación)
-1. Props definidas pero no usadas (código muerto)
-2. Inconsistencias menores de estilo
-3. Falta documentación/comentarios
-4. Oportunidades de refactoring
-5. Mejoras nice-to-have no en el plan
+### LOW (Doesn't block approval)
+1. Props defined but not used (dead code)
+2. Minor style inconsistencies
+3. Missing documentation/comments
+4. Refactoring opportunities
+5. Nice-to-have improvements not in plan
 
-## Comandos de Verificación
+## Verification Commands
 
 ```bash
-# Siempre ejecutar antes de revisar
+# Always run before reviewing
 cd D:/work/queryBox
 bun astro check  # TypeScript + Astro validation
-bun build        # Build de producción
+bun build        # Production build
 
-# Para verificar contraste (manual en devtools)
+# To verify contrast (manual in devtools)
 # Chrome DevTools > Elements > Styles > Color picker > Contrast ratio
 ```
 
-## Notas sobre el Proyecto queryBox
+## Notes on queryBox Project
 
-### Convenciones del Proyecto
-- Package manager: **Bun** (no npm/yarn)
+### Project Conventions
+- Package manager: **Bun** (not npm/yarn)
 - Framework: **Astro 5**
-- Tailwind: **v4** (usa `@theme` en CSS, NO `tailwind.config.js`)
+- Tailwind: **v4** (uses `@theme` in CSS, NOT `tailwind.config.js`)
 - TypeScript: **Strict mode** (`astro/tsconfigs/strict`)
-- Interactividad: **Custom Elements** (no React/Vue/Svelte)
+- Interactivity: **Custom Elements** (not React/Vue/Svelte)
 
 ### Design System
-- Prefijo tokens: `pm-` (ej: `bg-pm-bg-primary`, `text-pm-accent`)
-- Fuentes: Inter (UI), JetBrains Mono (código)
-- Color terciario ajustado: `#808080` (para WCAG AA compliance)
+- Token prefix: `pm-` (e.g.: `bg-pm-bg-primary`, `text-pm-accent`)
+- Fonts: Inter (UI), JetBrains Mono (code)
+- Tertiary color adjusted: `#808080` (for WCAG AA compliance)
 
-### Ubicaciones Importantes
+### Important Locations
 - Plan: `docs/[feature]/[feature]-plan.md`
-- Review: `docs/[feature]/review/[feature]-review.md` (append, no sobrescribir)
-- Componentes: `src/components/[area]/ComponentName.astro`
+- Review: `docs/[feature]/review/[feature]-review.md` (append, don't overwrite)
+- Components: `src/components/[area]/ComponentName.astro`
 - Scripts: `src/scripts/script-name.ts`
-- Datos mock: `src/data/mock-name.ts`
+- Mock data: `src/data/mock-name.ts`
 
-## Aprendizajes de la Revisión del Postman Clone
+## Learnings from Postman Clone Review
 
-### Primera Revisión - Lo que salió Mal
-1. **Responsividad**: CSS definido pero JSX sin cambios responsive
-2. **Keyboard nav**: Ningún Custom Element lo implementó inicialmente
-3. **ARIA**: Faltaron 4 patrones específicos (controls, level, listbox, hidden)
-4. **Mobile UI**: Sin hamburguesa, sin RequestBar stack, sin header simplificado
+### First Review - What Went Wrong
+1. **Responsiveness**: CSS defined but JSX without responsive changes
+2. **Keyboard nav**: No Custom Element implemented it initially
+3. **ARIA**: Missing 4 specific patterns (controls, level, listbox, hidden)
+4. **Mobile UI**: No hamburger, no RequestBar stack, no header simplification
 
-### Segunda Revisión - Correcciones Exitosas
-**TODAS las issues fueron corregidas exitosamente:**
-1. ✅ Responsividad completa: hamburguesa, backdrop, RequestBar responsive, header simplificado
-2. ✅ Navegación por teclado: todos los Custom Elements ahora tienen keyboard handlers completos
-3. ✅ ARIA completo: `aria-controls`, `aria-level`, `role="listbox"`, `aria-hidden` implementados
-4. ✅ Issues BAJA corregidos: props limpias, semántica correcta, design tokens consistentes
+### Second Review - Successful Corrections
+**ALL issues were corrected successfully:**
+1. ✅ Complete responsiveness: hamburger, backdrop, responsive RequestBar, header simplified
+2. ✅ Keyboard navigation: all Custom Elements now have complete keyboard handlers
+3. ✅ Complete ARIA: `aria-controls`, `aria-level`, `role="listbox"`, `aria-hidden` implemented
+4. ✅ LOW issues corrected: clean props, correct semantics, consistent design tokens
 
-**Patrón de corrección observado:**
-- El senior-developer es capaz de corregir TODOS los issues cuando se le da feedback específico
-- Las correcciones son de alta calidad (no introducen nuevos problemas)
-- Tiempo estimado de corrección: ~4-6 horas para 12 issues
+**Correction pattern observed:**
+- Senior developer capable of correcting ALL issues when given specific feedback
+- Corrections are high quality (no new issues introduced)
+- Estimated correction time: ~4-6 hours for 12 issues
 
-### Red Flags para Detectar Temprano
-- Si veo media queries en CSS pero no veo `md:hidden` o `lg:flex` en componentes → **Issue ALTA**
-- Si veo Custom Elements sin `addEventListener('keydown')` → **Issue ALTA**
-- Si veo tabs sin `aria-controls` → **Issue MEDIA**
-- Si veo iconos SVG sin `aria-hidden="true"` → **Issue MEDIA**
+### Early Red Flags to Detect
+- If I see media queries in CSS but no `md:hidden` or `lg:flex` in components → **HIGH Issue**
+- If I see Custom Elements without `addEventListener('keydown')` → **HIGH Issue**
+- If I see tabs without `aria-controls` → **MEDIUM Issue**
+- If I see SVG icons without `aria-hidden="true"` → **MEDIUM Issue**
 
-### Calidad del Trabajo Final
-**Metrics del Postman Clone aprobado:**
-- Estructura: 56/53 archivos (106% del plan)
-- TypeScript: 0 errores, 0 warnings
-- Build: Exitoso (957ms)
-- WCAG 2.1 AA: Completo
-- Responsive: Mobile, tablet, desktop completo
-- Keyboard nav: WAI-ARIA patterns completos
+### Approved Work Quality
+**Postman Clone approved metrics:**
+- Structure: 56/53 files (106% of plan)
+- TypeScript: 0 errors, 0 warnings
+- Build: Successful (957ms)
+- WCAG 2.1 AA: Complete
+- Responsive: Mobile, tablet, desktop complete
+- Keyboard nav: Complete WAI-ARIA patterns
 
-## Aprendizajes de la Revisión del HTTP Client MVP (Preact Islands)
+## Learnings from HTTP Client MVP Review (Preact Islands)
 
-### Patrón de Error: Integración de Framework en astro.config.mjs
-- **CRÍTICO**: `bun astro check` NO verifica que los renderers de framework estén registrados
-- El paquete `@astrojs/preact` puede estar instalado en `package.json` PERO si no está en `integrations: [preact()]` en `astro.config.mjs`, el build falla
-- Error en producción: `[NoMatchingRenderer] Unable to render ComponentName`
-- **Siempre verificar**: `grep -r "integrations" astro.config.mjs` y comparar con packages instalados
-- `bun run build` es el único comando que detecta este error (no `bun astro check`)
+### Error Pattern: Framework Integration in astro.config.mjs
+- **CRITICAL**: `bun astro check` does NOT verify framework renderers are registered
+- Package `@astrojs/preact` can be in `package.json` BUT if not in `integrations: [preact()]` in `astro.config.mjs`, build fails
+- Production error: `[NoMatchingRenderer] Unable to render ComponentName`
+- **Always verify**: `grep -r "integrations" astro.config.mjs` and compare with installed packages
+- `bun run build` is the only command that detects this error (not `bun astro check`)
 
-### Patrón de Error: XSS en dangerouslySetInnerHTML
-- `dangerouslySetInnerHTML` con datos de terceros (respuestas HTTP) es XSS si no se escapa HTML
-- El plan puede decir "MVP aceptable" pero respuestas HTTP vienen de terceros, no solo del usuario
-- **Siempre verificar**: si hay `dangerouslySetInnerHTML`, ¿los datos vienen de input del usuario o de red?
-- Fix mínimo: `escapeHtml()` antes de insertar contenido en `__html`
-- Patrón correcto: escapar primero, luego aplicar spans de highlighting
+### Error Pattern: XSS in dangerouslySetInnerHTML
+- `dangerouslySetInnerHTML` with third-party data (HTTP responses) is XSS if HTML not escaped
+- Plan might say "MVP acceptable" but HTTP responses come from third parties, not just users
+- **Always verify**: if `dangerouslySetInnerHTML`, do data come from user input or network?
+- Minimum fix: `escapeHtml()` before inserting content in `__html`
+- Correct pattern: escape first, then apply highlighting spans
 
-### Patrón de Error: IDs Duplicados en Componentes Múltiples de la Misma Página
-- Cuando hay múltiples instancias de un componente de tabs en la misma página (request tabs + response tabs), generan IDs duplicados
-- IDs `tabpanel-body` y `tabpanel-headers` aparecieron en AMBOS `RequestConfigTabs` y `ResponseTabs`
-- Esto rompe `aria-controls` y viola la especificación HTML
-- Fix: prop `idPrefix` en el componente `Tabs` reutilizable, o IDs hardcoded únicos por contexto
+### Error Pattern: Duplicate IDs in Multiple Component Instances on Same Page
+- When multiple instances of a tab component on same page (request tabs + response tabs), generate duplicate IDs
+- IDs `tabpanel-body` and `tabpanel-headers` appeared in BOTH `RequestConfigTabs` and `ResponseTabs`
+- This breaks `aria-controls` and violates HTML specification
+- Fix: `idPrefix` prop in reusable `Tabs` component, or unique hardcoded IDs per context
 
-### Observaciones sobre Calidad - Implementación Preact
-- Señales globales usadas directamente con `.value` en componentes es patrón idiomático de `@preact/signals` (autotracking)
-- Keyboard navigation implementada correctamente en Dropdown y Tabs (aprendieron de feedback previo)
-- ARIA implementado correctamente en Tabs (aria-controls linking correcto)
-- Bidirectional URL-params sync implementado con flag `isUpdatingFromParams` para evitar re-entrada
-- `batch()` usado correctamente para múltiples signal updates atómicos
+### Quality Observations - Preact Implementation
+- Global signals used directly with `.value` in components is idiomatic `@preact/signals` pattern (autotracking)
+- Keyboard navigation correctly implemented in Dropdown and Tabs (learned from previous feedback)
+- ARIA correctly implemented in Tabs (aria-controls linking correct)
+- Bidirectional URL-params sync implemented with `isUpdatingFromParams` flag to prevent re-entry
+- `batch()` correctly used for multiple atomic signal updates
 
-### Checklist Adicional para Revisiones con Frameworks (Preact/React/etc.)
-- [ ] `astro.config.mjs` tiene `integrations: [framework()]`
-- [ ] `bun run build` (no solo `bun astro check`) pasa
-- [ ] `dangerouslySetInnerHTML` escapa HTML entities antes de insertar
-- [ ] IDs de DOM son únicos en toda la página (no solo en cada componente)
+### Additional Checklist for Framework Reviews (Preact/React/etc.)
+- [ ] `astro.config.mjs` has `integrations: [framework()]`
+- [ ] `bun run build` (not just `bun astro check`) passes
+- [ ] `dangerouslySetInnerHTML` escapes HTML entities before inserting
+- [ ] DOM IDs are unique across entire page (not just per component)
 
-## Para la Próxima Revisión
+## Learnings from Local Persistence Review (Preact Islands)
 
-1. **Leer el plan completo** antes de revisar código (5-10 min)
-2. **Identificar Fase 6 y 7 requirements** específicos
-3. **Ejecutar verificación** (`astro check` + `bun run build`) primero - AMBOS son necesarios
-4. **Verificar astro.config.mjs** tiene integrations registradas si hay .tsx/.jsx
-5. **Revisar dangerouslySetInnerHTML** para HTML escaping si datos vienen de terceros
-6. **Revisar IDs de DOM** para duplicados cuando hay múltiples instancias de componentes reutilizables
-7. **Revisar Custom Elements** para keyboard handlers (siempre faltan en primera implementación)
-8. **Revisar media queries** contra componentes JSX (siempre desconectados)
-9. **Usar grep** para encontrar todos los `role="tab"`, `role="treeitem"`, etc. y verificar ARIA
-10. **Generar checklist** de plan compliance antes de empezar revisión detallada
+### New Error Pattern: Keyboard Handler with Focus Model Mismatch (Tree Navigation)
+- In `CollectionPanel.tsx` (2nd review), keyboard handler **present but non-functional**
+- Error: `querySelectorAll('[role="treeitem"]')` returns `<li>` without `tabIndex` → not focusable
+- `document.activeElement` always a child `<button>` → `items.indexOf(focused) = -1` always
+- Result: ArrowDown is silent no-op; ArrowRight/Left never fires (getAttribute("aria-level") on button = null)
+- **Correct fix**: change selector to focusable `<button>` within each treeitem, use `closest('[role="treeitem"]')` to read aria-level and data-collection-id to identify collection
+- **Red flag when reviewing**: keyboard handler + `querySelectorAll` + `.focus()` → verify elements are natively focusable or have `tabIndex`
+
+### New Error Pattern: Nested `<button>` inside `<button>` (Invalid HTML)
+- Senior developer put "delete" button inside "load" button in `HistoryPanel.tsx`
+- HTML spec: `<button>` cannot contain interactive content (other buttons, links, inputs)
+- Browsers handle this inconsistently; screen readers may ignore inner button
+- **Red flag**: If I see a layout of "row with main action + secondary action (delete)", always verify HTML structure
+
+### Local Persistence Review — Final Outcome (3 review cycles)
+- Cycle 1: 1 ALTA + 2 MEDIA found. Architecture excellent, issues in a11y/HTML validity.
+- Cycle 2: ALTA + MEDIA #1 resolved. MEDIA #2 (keyboard nav) re-attempted but broken — focus model mismatch.
+- Cycle 3: MEDIA #2 resolved with `button:first-of-type` selector + `closest()` walkup + `data-collection-id`. APPROVED.
+- Approved selector pattern: `'[role="treeitem"] button:first-of-type'` — targets primary action buttons, excludes delete buttons (second sibling), excludes collapsed children (not in DOM).
+- Correct expand/collapse pattern: `focused.closest('[role="treeitem"]')` → read `aria-level` and `dataset.collectionId` → call `toggleExpanded(colId)`.
+- Total: 3 ALTA/MEDIA issues resolved, 1 BAJA open (non-blocking `defaultName` redundancy in modal).
+- Correct fix: Container `<div>` with two `<button>` siblings, NOT `<button>` containing another
+- **`CollectionPanel.tsx` used correct pattern** (div with two button siblings) - reference for fix
+- Correct pattern also observed in CollectionPanel: `group-hover:opacity-100` to show delete on hover
+
+### Recurring Error Pattern: Missing `aria-level` on Trees
+- This is the SECOND review where `aria-level` is missing on `role="treeitem"`
+- Senior developer implements `role="tree"`, `role="treeitem"`, `aria-expanded` but forgets `aria-level`
+- Fix: `aria-level={1}` on collections (depth 1), `aria-level={2}` on requests (depth 2)
+
+### Overall Quality of Local Persistence Implementation
+- Excellent architecture: StorageService with type guards, signal stores with explicit persist, effect() for workbench
+- TypeScript: 0 errors, 0 warnings
+- Build: successful (1.44s), all modules as separate chunks
+- What went well vs Postman Clone: Basic ARIA better implemented, client:idle correctly chosen
+- What still fails: `aria-level` + keyboard tree nav + nested interactive elements
+
+## For Next Review
+
+1. **Read complete plan** before reviewing code (5-10 min)
+2. **Identify Phase 6 and 7 requirements** specifically
+3. **Run verification** (`astro check` + `bun run build`) first - BOTH are necessary
+4. **Verify astro.config.mjs** has integrations registered if .tsx/.jsx present
+5. **Review dangerouslySetInnerHTML** for HTML escaping if data comes from external sources
+6. **Review DOM IDs** for duplicates when multiple instances of reusable components
+7. **Review Custom Elements** for keyboard handlers (always missing in first implementation)
+8. **Review media queries** against JSX components (always disconnected)
+9. **Use grep** to find all `role="tab"`, `role="treeitem"`, etc. and verify ARIA
+10. **Generate checklist** of plan compliance before starting detailed review

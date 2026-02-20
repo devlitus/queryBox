@@ -52,6 +52,7 @@ When the user requests a new feature, refactoring, or architectural change:
 1. Launch the `planner` agent using the Task tool
 2. The planner will:
    - Clarify requirements and ask necessary questions
+   - **Create a feature branch**: `feature/[feature-name]` from `main`
    - Analyze the codebase and existing patterns
    - Research official documentation (Astro, TypeScript, Bun, libraries)
    - Create a detailed implementation plan in `docs/[feature]/[feature]-plan.md`
@@ -98,6 +99,13 @@ Skip the agent workflow for:
 - Direct user instructions that are already highly specific
 
 For these cases, implement directly without launching agents.
+
+## Git Branching Convention
+
+- **Feature branches**: `feature/[feature-name]` — created automatically by the planner agent
+- **Branch base**: Always branch from `main`
+- **Feature name**: Same slug as the plan directory (lowercase, hyphens)
+- **Example**: Feature "real-time updates" → branch `feature/real-time-updates`, plan at `docs/real-time-updates/`
 
 ## Agent Locations
 
