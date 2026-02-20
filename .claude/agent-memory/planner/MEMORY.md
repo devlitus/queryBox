@@ -4,7 +4,7 @@
 - Astro 5.17.1, Tailwind CSS 4.1.18 (v4), Bun, TypeScript strict
 - Tailwind v4 uses `@import "tailwindcss"` + `@theme` directive in CSS (NO tailwind.config.js)
 - `@theme { --color-name: value; }` generates utility classes like `bg-name`, `text-name`
-- No UI framework installed yet. Only .astro components + Custom Elements.
+- Preact + @preact/signals installed and configured (added in http-client feature)
 
 ## Project Structure (verified 2026-02-19)
 - Components: header/, request/, response/, shared/, sidebar/, workbench/
@@ -21,13 +21,32 @@
 - Design tokens via @theme, Google Fonts CDN, manual JSON regex highlighting
 - Plan: `docs/postman-clone/postman-clone-plan.md`
 
-### HTTP Client MVP (Phase 2 - Functional) - PLANNED
+### HTTP Client MVP (Phase 2 - Functional) - COMPLETED
 - Preact + @preact/signals for interactive islands
 - Single island boundary: HttpWorkbench wraps request + response panels
 - Static shell (header, footer, sidebar) stays Astro
 - Custom Elements coexist with Preact islands
 - CORS limitation documented; suggest test APIs + future proxy
 - Plan: `docs/http-client/http-client-plan.md`
+
+### Local Persistence (Phase 3) - PLANNED
+- localStorage for history (50 max FIFO), collections (flat, no folders), workbench state
+- StorageService abstraction in src/services/storage.ts with qb: key prefix
+- Sidebar panels (History, Collections) converted from .astro placeholders to Preact islands
+- Workbench state: effect() auto-persist; history/collections: explicit persist-on-mutate
+- New stores: history-store.ts, collection-store.ts, ui-store.ts
+- SaveToCollectionModal.tsx in workbench island
+- MethodBadge.tsx shared Preact component (replicates Badge.astro for .tsx context)
+- client:idle recommended for sidebar islands (non-critical, defer hydration)
+- Plan: `docs/local-persistence/local-persistence-plan.md`
+
+## Codebase State (verified 2026-02-20)
+- Mock data files removed (src/data/ emptied in http-client feature)
+- Sidebar panels show static placeholders: CollectionTree.astro, HistoryList.astro, EnvironmentList.astro
+- sidebar.ts Custom Element already uses localStorage for collapse state (key: "sidebar-collapsed")
+- Badge.astro has method color mapping (pm-method-*) - needs .tsx equivalent for islands
+- pm-tabs Custom Element in tabs.ts handles tab switching via hidden class toggle on [data-panel] divs
+- RequestBar.tsx calls sendRequest() from http-client.ts; success path is the hook point for history
 
 ## Astro + Preact Integration (from official docs 2026-02-19)
 - Install: `bun add @astrojs/preact preact @preact/signals`

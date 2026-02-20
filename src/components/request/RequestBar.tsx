@@ -2,6 +2,7 @@ import MethodSelector from "./MethodSelector";
 import { requestState, requestStatus } from "../../stores/http-store";
 import { updateUrl } from "../../stores/http-store";
 import { sendRequest, cancelRequest } from "../../services/http-client";
+import { showSaveModal } from "../../stores/ui-store";
 
 export default function RequestBar() {
   const status = requestStatus.value;
@@ -25,6 +26,26 @@ export default function RequestBar() {
 
       {/* Action buttons */}
       <div class="flex gap-2">
+        {/* Save to collection button */}
+        <button
+          type="button"
+          disabled={!url}
+          class={`inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded transition-colors ${
+            url
+              ? "text-pm-text-secondary hover:text-pm-text-primary hover:bg-pm-bg-elevated"
+              : "text-pm-text-tertiary cursor-not-allowed opacity-50"
+          }`}
+          aria-label="Save request to collection"
+          title="Save to collection"
+          onClick={() => { showSaveModal.value = true; }}
+        >
+          {/* Bookmark icon */}
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+          </svg>
+          <span class="hidden md:inline">Save</span>
+        </button>
+
         {isLoading && (
           <button
             type="button"

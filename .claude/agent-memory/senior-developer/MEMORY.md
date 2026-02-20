@@ -39,3 +39,15 @@
 - `batch()` from `@preact/signals` used when updating multiple signals at once
 - Inline SVG icons used throughout (not icon library)
 - All inputs are controlled components reading from signals
+
+## Local Persistence Pattern (added feature/local-persistence)
+
+- Storage layer: `src/services/storage.ts` — thin wrapper around localStorage with type guards and graceful degradation
+- Keys: `qb:history`, `qb:collections`, `qb:workbench`
+- New stores: `src/stores/history-store.ts`, `src/stores/collection-store.ts`, `src/stores/ui-store.ts`
+- `effect()` from `@preact/signals` used ONLY for workbench auto-persist (many mutation paths); history/collections use explicit persist calls per mutation
+- Sidebar islands use `client:idle` (not `client:load`) — sidebar content is non-critical, defer hydration
+- `structuredClone(state)` used to snapshot RequestState before saving to history/collections
+- `loadRequest()` in http-store regenerates all KeyValuePair IDs to prevent key collisions
+- SaveToCollectionModal: uses `useState` for local form state, reads `collections` signal for select options
+- MethodBadge.tsx: shared Preact component at `src/components/shared/MethodBadge.tsx` — replicates Badge.astro styling for use inside .tsx islands

@@ -1,21 +1,34 @@
-import { signal, computed, batch } from "@preact/signals";
+import { signal, computed, batch, effect } from "@preact/signals";
 import type { HttpMethod, KeyValuePair, RequestState, ResponseState, RequestStatus, HttpError, BodyMode, ContentType } from "../types/http";
 import { parseQueryParams, buildUrlWithParams, formatBytes } from "../utils/url";
+import { StorageService } from "../services/storage";
 
 // ---------------------------------------------------------------------------
 // State signals
 // ---------------------------------------------------------------------------
 
-export const requestState = signal<RequestState>({
-  method: "GET",
-  url: "",
-  params: [],
-  headers: [],
-  body: {
-    mode: "none",
-    contentType: "json",
-    raw: "",
-  },
+const savedState = StorageService.getWorkbenchState();
+
+export const requestState = signal<RequestState>(
+  savedState ?? {
+    method: "GET",
+    url: "",
+    params: [],
+    headers: [],
+    body: {
+      mode: "none",
+      contentType: "json",
+      raw: "",
+    },
+  }
+);
+
+// Auto-persist workbench state on every change.
+// effect() is appropriate here because requestState is mutated by many
+// action functions; a single effect is cleaner than adding persist calls
+// to each one. Safe from SSR: this module is only imported by client:load islands.
+effect(() => {
+  StorageService.setWorkbenchState(requestState.value);
 });
 
 export const responseState = signal<ResponseState | null>(null);
@@ -171,4 +184,18 @@ export function resetResponse(): void {
     requestStatus.value = "idle";
     requestError.value = null;
   });
+}
+
+/**
+ * Loads a saved request snapshot into the workbench.
+ * Regenerates all KeyValuePair IDs to avoid key collisions when the same
+ * snapshot is loaded multiple times. Clears any previous response.
+ */
+export function loadRequest(snapshot: RequestState): void {
+  requestState.value = {
+    ...snapshot,
+    params: snapshot.params.map((p) => ({ ...p, id: crypto.randomUUID() })),
+    headers: snapshot.headers.map((h) => ({ ...h, id: crypto.randomUUID() })),
+  };
+  resetResponse();
 }

@@ -46,6 +46,23 @@ docs/[feature-name]/[feature-name]-plan.md
    - **Priority**: What is critical vs. nice-to-have?
 4. **DO NOT PROCEED until you have clear answers.** If the user gives vague answers, rephrase questions with concrete options.
 
+### Phase 0.5: Branch Creation
+
+Once the feature name is confirmed and there is no ambiguity:
+
+1. **Determine the branch name** using the convention: `feature/[feature-name]`
+   - Use the same slug as the plan directory (lowercase, hyphens)
+   - Example: feature is "authentication" → branch `feature/authentication`
+   - Example: feature is "real-time updates" → branch `feature/real-time-updates`
+2. **Create the branch from main**:
+   ```bash
+   git checkout -b feature/[feature-name] main
+   ```
+3. **Verify the branch was created** with `git branch --show-current`
+4. **All subsequent work** (plan file, docs) will be committed to this branch by the implementation agents.
+
+> **IMPORTANT**: Do NOT commit anything on this branch. Only create it. The senior-developer agent will handle commits during implementation.
+
 ### Phase 1: Codebase Analysis
 
 1. **Explore the complete project structure**: directories, key files, configurations.

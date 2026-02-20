@@ -1,8 +1,8 @@
 ---
 import SidebarTabs from "./SidebarTabs.astro";
-import CollectionTree from "./CollectionTree.astro";
 import EnvironmentList from "./EnvironmentList.astro";
-import HistoryList from "./HistoryList.astro";
+import CollectionPanel from "./CollectionPanel";
+import HistoryPanel from "./HistoryPanel";
 ---
 
 <aside class="fixed lg:relative inset-y-0 left-0 z-50 w-64 bg-pm-bg-secondary border-r border-pm-border flex flex-col overflow-hidden -translate-x-full lg:translate-x-0 transition-transform duration-300" role="navigation" aria-label="Sidebar navigation">
@@ -15,7 +15,7 @@ import HistoryList from "./HistoryList.astro";
 			aria-labelledby="tab-collections"
 			class="flex-1 overflow-y-auto p-2"
 		>
-			<CollectionTree />
+			<CollectionPanel client:idle />
 		</div>
 
 		<!-- Environments panel -->
@@ -37,7 +37,7 @@ import HistoryList from "./HistoryList.astro";
 			aria-labelledby="tab-history"
 			class="hidden flex-1 overflow-y-auto p-2"
 		>
-			<HistoryList />
+			<HistoryPanel client:idle />
 		</div>
 	</SidebarTabs>
 </aside>
