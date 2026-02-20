@@ -6,7 +6,11 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "_note_test": "Use 'bun run test' — NOT 'bun test' (bun test runs Bun's native runner, not Vitest)"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.6",
@@ -19,6 +23,9 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.9"
+    "@types/bun": "^1.3.9",
+    "@vitest/coverage-v8": "^4.0.18",
+    "happy-dom": "^20.6.3",
+    "vitest": "^4.0.18"
   }
 }

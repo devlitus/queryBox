@@ -1,0 +1,16 @@
+# bunfig.toml — Bun runtime configuration for queryBox
+#
+# IMPORTANT: `bun test` invokes Bun's native test runner, NOT Vitest.
+# This project uses Vitest for testing. Always use:
+#
+#   bun run test           — run all tests once
+#   bun run test:watch     — run tests in watch mode
+#   bun run test:coverage  — run tests with coverage report
+#
+# Do NOT use `bun test` directly — it bypasses package.json scripts and
+# runs Bun's built-in runner, which will fail because our tests require
+# Vitest's globals, happy-dom environment, and vitest.config.ts setup.
+
+[install]
+# Use exact versions to ensure reproducible installs
+exact = false
