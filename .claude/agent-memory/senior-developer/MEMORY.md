@@ -110,3 +110,21 @@
 - http-store mock pattern: `vi.mock("../services/storage", ...)` to suppress `effect()` auto-persist side effects
 - Coverage exclusions in `vitest.config.ts`: `http-client.ts` and `ui-store.ts` excluded (LOW priority files)
 - `tsconfig.json` has `"types": ["vitest/globals"]` for global `describe/it/expect` without imports
+
+## Authentication System (added feature/auth-system)
+
+- Types: `src/types/auth.ts` — `AuthType`, `BasicAuthConfig`, `BearerTokenConfig`, `ApiKeyConfig`, `AuthConfig` (discriminated union), `DEFAULT_AUTH`
+- Utilities: `src/utils/auth.ts` — `resolveAuthHeaders(auth): ResolvedAuth` (pure function, returns `{ headers, params }`)
+- Unicode-safe base64: `TextEncoder` + `btoa(String.fromCharCode(...bytes))` — NOT plain `btoa()` which fails on non-Latin1
+- `RequestState` now includes `auth: AuthConfig` field (added to `src/types/http.ts`)
+- Store actions in `src/stores/http-store.ts`: `updateAuthType`, `updateBasicAuth`, `updateBearerToken`, `updateApiKey`
+- `updateAuthType` reinitializes the full config for the new type (prevents state residue between types)
+- Migration guard in `tab-store.ts` `initializeTabs()`: `auth: t.request.auth ?? DEFAULT_AUTH`
+- `loadRequest()` in `http-store.ts` also applies `auth: snapshot.auth ?? DEFAULT_AUTH` fallback
+- `interpolateRequest()` now calls `interpolateAuth()` — interpolates basic.username/password, bearer.token, apikey.key/value; does NOT interpolate bearer.prefix
+- UI: `src/components/request/AuthEditor.tsx` — inline sub-components (NoAuthPanel, BasicAuthPanel, BearerTokenPanel, ApiKeyPanel); uses `Dropdown` + `VariableIndicator`
+- VariableIndicator in AuthEditor requires `activeEnvironmentId.value !== null` guard (pattern from EnvironmentPanel)
+- `RequestConfigTabs.tsx` updated: TAB_IDS now includes "auth"; AuthEditor rendered as 4th tabpanel
+- `http-client.ts`: `resolveAuthHeaders()` called after interpolation; auth headers added BEFORE user headers (user headers take precedence); API Key query params injected into URL via `searchParams.set()`
+- `makeRequestState()` factory now includes `auth: DEFAULT_AUTH`; new `makeAuthConfig()` factory in `src/test/factories.ts`
+- Cast pattern for testing legacy snapshots without auth field: `legacyObj as unknown as RequestState`

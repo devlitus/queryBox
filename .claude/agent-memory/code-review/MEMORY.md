@@ -57,6 +57,14 @@
   Fix pattern: extending shared Dropdown with optional `icon?: string` prop + dangerouslySetInnerHTML is safe
   for static SVG assets (not user data). Always distinguish static-asset SVG (safe) vs HTTP-response data (XSS risk).
   Storage uncovered lines 88-90,174-198 are carry-forward from add-requests phase (not new).
+- auth-system (2026-02-21): APPROVED on first review. 299 tests pass, build succeeds, 0 TS errors.
+  Near-perfect implementation across all 5 phases. Only 2 BAJA issues:
+  (1) Double import from same module in AuthEditor.tsx (style, should be consolidated),
+  (2) makeAuthConfig() factory uses `Partial<AuthConfig>` + `as AuthConfig` cast — fragile typing.
+  Positive: Unicode base64 with TextEncoder correctly implemented and documented; migration guards applied
+  in all 3 required places; VariableIndicator correctly conditioned to `activeEnvironmentId !== null`;
+  auth header precedence (auth < user-defined) correctly implemented and commented; 100% coverage on auth.ts.
+  Pattern: discriminated union + TextEncoder base64 is the established auth encoding approach in this codebase.
 
 ## Optimized Review Checklist
 
