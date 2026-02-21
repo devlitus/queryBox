@@ -1,10 +1,10 @@
 ---
-import TabBar from "./TabBar.astro";
+import TabBar from "./TabBar.tsx";
 import HttpWorkbench from "./HttpWorkbench.tsx";
 ---
 
 <main class="flex flex-col bg-pm-bg-primary overflow-hidden">
-	<TabBar />
+	<TabBar client:load />
 	<div class="flex-1 flex flex-col overflow-hidden">
 		<HttpWorkbench client:load />
 	</div>

@@ -69,6 +69,16 @@
 - Works in .tsx files automatically via Vite plugin
 - Namespaces: --color-*, --font-*, --text-*, --spacing-*, --radius-*
 
+### Add Requests / Multi-Tab (Phase 5) - PLANNED
+- TabBar.astro + TabItem.astro are static, no event handlers
+- http-store has SINGLE requestState signal (no multi-tab concept)
+- StorageService persists single workbench state under qb:workbench
+- Plan: Convert TabBar to Preact island, create tab-store.ts with Tab[] signal
+- http-store refactored to computed proxies reading from active tab
+- Persistence: qb:tabs + qb:active-tab keys, migrate from qb:workbench
+- Max 20 tabs, response bodies excluded from persistence
+- Plan: `docs/add-requests/add-requests-plan.md`
+
 ### Test Runner (Phase 4) - PLANNED
 - Vitest chosen over Bun test and Jest (official Astro recommendation)
 - `getViteConfig()` from `astro/config` reuses Vite pipeline in tests

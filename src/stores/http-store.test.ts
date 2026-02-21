@@ -1,26 +1,37 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { makeRequestState, makeKeyValuePair } from "../test/factories";
+import type { ResponseState } from "../types/http";
 
 // Mock StorageService to prevent real localStorage interaction from the
-// module-level effect() that auto-persists workbench state on every change.
+// module-level effects in tab-store (which auto-persists tabs and activeTabId).
 vi.mock("../services/storage", () => ({
   StorageService: {
+    // Legacy workbench (deprecated, kept for migration path)
     getWorkbenchState: () => null,
     setWorkbenchState: vi.fn(),
+    // History / Collections
     getHistory: () => [],
     setHistory: vi.fn(),
     getCollections: () => [],
     setCollections: vi.fn(),
+    // Tab persistence (new)
+    getTabs: () => [],
+    setTabs: vi.fn(),
+    getActiveTabId: () => null,
+    setActiveTabId: vi.fn(),
+    removeItem: vi.fn(),
   },
 }));
 
 // Use dynamic import + vi.resetModules() to get a fresh module instance
-// per test, resetting module-level mutable state (isUpdatingFromParams flag, signals).
+// per test, resetting module-level mutable state (isUpdatingFromParams flag,
+// signals in both http-store and tab-store).
 let httpStore: typeof import("./http-store");
+let tabStore: typeof import("./tab-store");
 
 beforeEach(async () => {
   vi.resetModules();
-  // Re-apply mock after resetModules
+  // Re-apply mock after resetModules so the fresh module load sees it
   vi.mock("../services/storage", () => ({
     StorageService: {
       getWorkbenchState: () => null,
@@ -29,10 +40,21 @@ beforeEach(async () => {
       setHistory: vi.fn(),
       getCollections: () => [],
       setCollections: vi.fn(),
+      getTabs: () => [],
+      setTabs: vi.fn(),
+      getActiveTabId: () => null,
+      setActiveTabId: vi.fn(),
+      removeItem: vi.fn(),
     },
   }));
+  tabStore = await import("./tab-store");
   httpStore = await import("./http-store");
 });
+
+// Helper: set response state on the active tab via tab-store
+function setResponseState(response: ResponseState): void {
+  tabStore.updateActiveTabResponse(response, "success", null);
+}
 
 // ---------------------------------------------------------------------------
 // updateMethod
@@ -375,7 +397,7 @@ describe("formattedSize computed", () => {
   });
 
   it("returns formatted size string when response has a size", () => {
-    httpStore.responseState.value = {
+    setResponseState({
       status: 200,
       statusText: "OK",
       headers: [],
@@ -383,7 +405,7 @@ describe("formattedSize computed", () => {
       contentType: "application/json",
       time: 100,
       size: 2048,
-    };
+    });
     expect(httpStore.formattedSize.value).toBe("2.00 KB");
   });
 });
@@ -398,7 +420,7 @@ describe("statusColorClass computed", () => {
   });
 
   it("returns success class for 2xx status codes", () => {
-    httpStore.responseState.value = {
+    setResponseState({
       status: 200,
       statusText: "OK",
       headers: [],
@@ -406,12 +428,12 @@ describe("statusColorClass computed", () => {
       contentType: "application/json",
       time: 50,
       size: 0,
-    };
+    });
     expect(httpStore.statusColorClass.value).toBe("text-pm-status-success");
   });
 
   it("returns success class for 201 Created", () => {
-    httpStore.responseState.value = {
+    setResponseState({
       status: 201,
       statusText: "Created",
       headers: [],
@@ -419,12 +441,12 @@ describe("statusColorClass computed", () => {
       contentType: "application/json",
       time: 50,
       size: 0,
-    };
+    });
     expect(httpStore.statusColorClass.value).toBe("text-pm-status-success");
   });
 
   it("returns redirect class for 3xx status codes", () => {
-    httpStore.responseState.value = {
+    setResponseState({
       status: 301,
       statusText: "Moved Permanently",
       headers: [],
@@ -432,12 +454,12 @@ describe("statusColorClass computed", () => {
       contentType: "text/html",
       time: 30,
       size: 0,
-    };
+    });
     expect(httpStore.statusColorClass.value).toBe("text-pm-status-redirect");
   });
 
   it("returns error class for 4xx status codes", () => {
-    httpStore.responseState.value = {
+    setResponseState({
       status: 404,
       statusText: "Not Found",
       headers: [],
@@ -445,12 +467,12 @@ describe("statusColorClass computed", () => {
       contentType: "application/json",
       time: 20,
       size: 0,
-    };
+    });
     expect(httpStore.statusColorClass.value).toBe("text-pm-status-error");
   });
 
   it("returns error class for 5xx status codes", () => {
-    httpStore.responseState.value = {
+    setResponseState({
       status: 500,
       statusText: "Internal Server Error",
       headers: [],
@@ -458,7 +480,7 @@ describe("statusColorClass computed", () => {
       contentType: "application/json",
       time: 200,
       size: 0,
-    };
+    });
     expect(httpStore.statusColorClass.value).toBe("text-pm-status-error");
   });
 });

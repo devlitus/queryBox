@@ -39,3 +39,13 @@ export interface HttpError {
   message: string;
   type: "network" | "cors" | "timeout" | "abort" | "unknown";
 }
+
+export interface Tab {
+  id: string;                    // crypto.randomUUID()
+  name: string;                  // Display name, default "New Request"
+  request: RequestState;         // Full request state for this tab
+  response: ResponseState | null;
+  requestStatus: RequestStatus;
+  requestError: HttpError | null;
+  isDirty: boolean;              // Whether the tab has unsaved modifications
+}

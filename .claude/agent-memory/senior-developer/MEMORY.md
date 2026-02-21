@@ -52,6 +52,21 @@
 - SaveToCollectionModal: uses `useState` for local form state, reads `collections` signal for select options
 - MethodBadge.tsx: shared Preact component at `src/components/shared/MethodBadge.tsx` — replicates Badge.astro styling for use inside .tsx islands
 
+## Tab Store Architecture (added feature/add-requests)
+
+- Tab store: `src/stores/tab-store.ts` — `tabs` signal (Tab[]), `activeTabId` signal, `activeTab` computed
+- Tab type: `src/types/http.ts` — `Tab` interface (id, name, request, response, requestStatus, requestError, isDirty)
+- http-store signals are now `computed` proxies from `activeTab` (ReadonlySignal) — cannot assign to `.value`
+- All http-store action functions delegate writes to `updateActiveTabRequest`/`updateActiveTabResponse` in tab-store
+- http-client.ts uses `updateActiveTabResponse` (not direct signal assignment) for all response state writes
+- Tab persistence keys: `qb:tabs`, `qb:active-tab` (legacy `qb:workbench` migrated on first load then removed)
+- Responses are NOT persisted — ephemeral. Tabs are restored with `response: null`, `requestStatus: "idle"` on load
+- `shouldFocusUrl` signal in ui-store triggers RequestBar to focus URL input when new tab is created
+- Tab name auto-updates to URL hostname after first successful request if name is still "New Request"
+- TabBar.tsx and TabBarItem.tsx are Preact islands at `src/components/workbench/`
+- Middle-click (button===1) on TabBarItem closes the tab
+- `vi.doMock()` (NOT `vi.mock`) must be used inside tests that reference local variables in their factory — `vi.mock` is hoisted and cannot access variables defined later in the test body
+
 ## Testing Infrastructure (added feature/test-runner)
 
 - Test runner: Vitest v4 + happy-dom, configured via `vitest.config.ts` using `getViteConfig()` from `astro/config`
