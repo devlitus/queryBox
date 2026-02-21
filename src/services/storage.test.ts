@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { StorageService } from "./storage";
-import { makeRequestState, makeHistoryEntry, makeCollection } from "../test/factories";
+import { makeRequestState, makeHistoryEntry, makeCollection, makeEnvironment, makeEnvironmentVariable } from "../test/factories";
 
 // ---------------------------------------------------------------------------
 // Generic primitives: getItem / setItem / removeItem
@@ -179,5 +179,109 @@ describe("StorageService.setWorkbenchState", () => {
     StorageService.setWorkbenchState(state);
     const stored = JSON.parse(localStorage.getItem("qb:workbench") ?? "null");
     expect(stored?.url).toBe("https://persisted.com");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Domain helper: getEnvironments / setEnvironments
+// ---------------------------------------------------------------------------
+
+describe("StorageService.getEnvironments", () => {
+  it("returns empty array when localStorage is empty", () => {
+    expect(StorageService.getEnvironments()).toEqual([]);
+  });
+
+  it("returns valid environments", () => {
+    const env = makeEnvironment({ id: "env-1" });
+    localStorage.setItem("qb:environments", JSON.stringify([env]));
+    const result = StorageService.getEnvironments();
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("env-1");
+  });
+
+  it("filters out corrupted entries and re-saves filtered data", () => {
+    const valid = makeEnvironment({ id: "valid-env" });
+    const corrupt = { notAnEnvironment: true };
+    localStorage.setItem("qb:environments", JSON.stringify([valid, corrupt]));
+    const result = StorageService.getEnvironments();
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("valid-env");
+    const stored = JSON.parse(localStorage.getItem("qb:environments") ?? "[]");
+    expect(stored).toHaveLength(1);
+  });
+
+  it("clears key and returns empty array when stored data is not an array", () => {
+    localStorage.setItem("qb:environments", JSON.stringify({ not: "an array" }));
+    const result = StorageService.getEnvironments();
+    expect(result).toEqual([]);
+    expect(localStorage.getItem("qb:environments")).toBeNull();
+  });
+
+  it("validates environment variables within environments", () => {
+    const validVar = makeEnvironmentVariable({ id: "v1" });
+    const corruptVar = { notAVariable: true };
+    const envWithCorruptVar = makeEnvironment({
+      id: "env-corrupt-var",
+      variables: [corruptVar as never],
+    });
+    const envWithValidVar = makeEnvironment({
+      id: "env-valid-var",
+      variables: [validVar],
+    });
+    localStorage.setItem(
+      "qb:environments",
+      JSON.stringify([envWithCorruptVar, envWithValidVar])
+    );
+    const result = StorageService.getEnvironments();
+    // Environment with corrupt variable fails isEnvironment check
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("env-valid-var");
+  });
+});
+
+describe("StorageService.setEnvironments", () => {
+  it("persists environments array to localStorage", () => {
+    const envs = [makeEnvironment({ id: "e1" }), makeEnvironment({ id: "e2" })];
+    StorageService.setEnvironments(envs);
+    const stored = JSON.parse(localStorage.getItem("qb:environments") ?? "[]");
+    expect(stored).toHaveLength(2);
+    expect(stored[0].id).toBe("e1");
+    expect(stored[1].id).toBe("e2");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Domain helper: getActiveEnvironmentId / setActiveEnvironmentId
+// ---------------------------------------------------------------------------
+
+describe("StorageService.getActiveEnvironmentId", () => {
+  it("returns null when localStorage is empty", () => {
+    expect(StorageService.getActiveEnvironmentId()).toBeNull();
+  });
+
+  it("returns the stored id string when valid", () => {
+    localStorage.setItem("qb:active-environment", JSON.stringify("env-abc"));
+    const result = StorageService.getActiveEnvironmentId();
+    expect(result).toBe("env-abc");
+  });
+
+  it("returns null when stored value is not a string", () => {
+    localStorage.setItem("qb:active-environment", JSON.stringify({ invalid: true }));
+    const result = StorageService.getActiveEnvironmentId();
+    expect(result).toBeNull();
+  });
+});
+
+describe("StorageService.setActiveEnvironmentId", () => {
+  it("persists the id to localStorage", () => {
+    StorageService.setActiveEnvironmentId("env-xyz");
+    const stored = JSON.parse(localStorage.getItem("qb:active-environment") ?? "null");
+    expect(stored).toBe("env-xyz");
+  });
+
+  it("removes the key from localStorage when id is null", () => {
+    localStorage.setItem("qb:active-environment", JSON.stringify("env-xyz"));
+    StorageService.setActiveEnvironmentId(null);
+    expect(localStorage.getItem("qb:active-environment")).toBeNull();
   });
 });

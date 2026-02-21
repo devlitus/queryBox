@@ -18,10 +18,12 @@
 
 import {
   requestState,
-  fullUrl,
 } from "../stores/http-store";
 import { updateActiveTabResponse, activeTab, renameTab } from "../stores/tab-store";
 import { addHistoryEntry } from "../stores/history-store";
+import { activeVariablesMap } from "../stores/environment-store";
+import { interpolateRequest } from "../utils/interpolation";
+import { buildUrlWithParams } from "../utils/url";
 import type { HttpError } from "../types/http";
 
 /** Default tab name that triggers auto-rename. */
@@ -51,10 +53,20 @@ export async function sendRequest(): Promise<void> {
   const signal = abortController.signal;
 
   const state = requestState.value;
-  const url = fullUrl.value;
+
+  // Interpolate variables from the active environment (fast path when no env is active)
+  const variables = activeVariablesMap.value;
+  const interpolatedState = variables.size > 0
+    ? interpolateRequest(state, variables)
+    : state;
+
+  // Build resolvedUrl AFTER interpolation, from the already-interpolated state.
+  // Using fullUrl.value here would URL-encode {{...}} before interpolation,
+  // making the regex unable to match them.
+  const resolvedUrl = buildUrlWithParams(interpolatedState.url, interpolatedState.params);
 
   // Basic URL validation
-  if (!url) {
+  if (!resolvedUrl) {
     updateActiveTabResponse(null, "error", {
       message: "Please enter a URL before sending a request.",
       type: "unknown",
@@ -63,10 +75,10 @@ export async function sendRequest(): Promise<void> {
   }
 
   try {
-    new URL(url);
+    new URL(resolvedUrl);
   } catch {
     updateActiveTabResponse(null, "error", {
-      message: `"${url}" is not a valid URL. Make sure it starts with http:// or https://.`,
+      message: `"${resolvedUrl}" is not a valid URL. Make sure it starts with http:// or https://.`,
       type: "unknown",
     });
     return;
@@ -75,16 +87,16 @@ export async function sendRequest(): Promise<void> {
   // Set loading state
   updateActiveTabResponse(null, "loading", null);
 
-  // Build headers
+  // Build headers from interpolated state
   const fetchHeaders = new Headers();
-  for (const h of state.headers.filter((h) => h.enabled && h.key !== "")) {
+  for (const h of interpolatedState.headers.filter((h) => h.enabled && h.key !== "")) {
     fetchHeaders.set(h.key, h.value);
   }
 
   // Auto-add Content-Type for raw body if not already set
-  const hasBody = ["POST", "PUT", "PATCH", "DELETE"].includes(state.method) &&
-    state.body.mode === "raw" &&
-    state.body.raw.length > 0;
+  const hasBody = ["POST", "PUT", "PATCH", "DELETE"].includes(interpolatedState.method) &&
+    interpolatedState.body.mode === "raw" &&
+    interpolatedState.body.raw.length > 0;
 
   if (hasBody && !fetchHeaders.has("Content-Type")) {
     const contentTypeMap: Record<string, string> = {
@@ -93,24 +105,24 @@ export async function sendRequest(): Promise<void> {
       xml:  "application/xml",
       html: "text/html",
     };
-    fetchHeaders.set("Content-Type", contentTypeMap[state.body.contentType] ?? "text/plain");
+    fetchHeaders.set("Content-Type", contentTypeMap[interpolatedState.body.contentType] ?? "text/plain");
   }
 
   // Build fetch options
   const fetchOptions: RequestInit = {
-    method: state.method,
+    method: interpolatedState.method,
     headers: fetchHeaders,
     signal,
   };
 
   if (hasBody) {
-    fetchOptions.body = state.body.raw;
+    fetchOptions.body = interpolatedState.body.raw;
   }
 
   const startTime = performance.now();
 
   try {
-    const response = await fetch(url, fetchOptions);
+    const response = await fetch(resolvedUrl, fetchOptions);
     const endTime = performance.now();
     const timeMs = Math.round(endTime - startTime);
 
@@ -151,19 +163,20 @@ export async function sendRequest(): Promise<void> {
       null
     );
 
+    // History stores the original (unresolved) state and URL — preserving templates for re-use
     addHistoryEntry({
       method: state.method,
-      url: url,
+      url: state.url,
       status: response.status,
       statusText: response.statusText,
       requestSnapshot: structuredClone(state),
     });
 
-    // Auto-rename tab to URL hostname if still using the default name
+    // Auto-rename tab using the resolved URL hostname
     const currentTab = activeTab.value;
     if (currentTab && currentTab.name === DEFAULT_TAB_NAME) {
       try {
-        const hostname = new URL(url).hostname;
+        const hostname = new URL(resolvedUrl).hostname;
         if (hostname) {
           renameTab(currentTab.id, hostname);
         }

@@ -67,6 +67,36 @@
 - Middle-click (button===1) on TabBarItem closes the tab
 - `vi.doMock()` (NOT `vi.mock`) must be used inside tests that reference local variables in their factory — `vi.mock` is hoisted and cannot access variables defined later in the test body
 
+## Environment Variables Feature (added feature/environment-variables)
+
+- Types: `src/types/environment.ts` — `EnvironmentVariable` and `Environment` interfaces
+- Interpolation utilities: `src/utils/interpolation.ts` — `interpolateVariables`, `extractVariableNames`, `hasVariables`, `interpolateRequest`
+- Store: `src/stores/environment-store.ts` — signals `environments`, `activeEnvironmentId`; computed `activeEnvironment`, `activeVariablesMap` (Map<string,string>)
+- Storage keys: `qb:environments`, `qb:active-environment` (null stored by removing the key)
+- http-client.ts reads `activeVariablesMap.value` — fast path when `variables.size > 0`; history stores UNRESOLVED (template) URL and state
+- UI: `EnvironmentSelector.tsx` (header, `client:load`), `EnvironmentPanel.tsx` (sidebar, `client:idle`), `VariableIndicator.tsx` (shared)
+- `setActiveEnvironmentId(null)` calls `removeItem()` — not `setItem(null)` — to clear the key
+- Regex `/\{\{([^}]+)\}\}/g` requires at least one non-`}` character between braces; `{{}}` does NOT match
+- VariableIndicator tooltip uses CSS `group-hover/indicator` named group variant for Tailwind
+- `Dropdown.tsx` accepts optional `icon?: string` prop (raw SVG string); rendered via `dangerouslySetInnerHTML` before the label `<span>`
+- SVG `?raw` imports in `.tsx` files: pass raw string to `dangerouslySetInnerHTML={{ __html: svgString }}` on a container `<span>`; `.astro` files use `<Fragment set:html={svgRaw} />`
+- VariableIndicator must check `activeEnvironmentId.value !== null` AND `hasVariables(url)` — indicator must be hidden when no env is active
+
+## Sidebar Resize Handle (added feature/environment-variables Phase 8)
+
+- Custom Element: `src/scripts/sidebar-resize.ts` — `PmSidebarResize` class, same pattern as `PmSidebarToggle`
+- Storage key: `qb:sidebar-width` — raw localStorage (NOT via StorageService, consistent with `sidebar-collapsed` key)
+- Constants: `MIN_WIDTH=180`, `MAX_WIDTH=600`, `DEFAULT_WIDTH=320` (px)
+- Pointer Events API: `setPointerCapture` / `releasePointerCapture` for unified mouse+touch drag
+- `pointerdown`/`pointermove`/`pointerup` registered on the element itself (not document)
+- `data-resizing` attribute on `<aside>` disables CSS transition during drag (prevents lag)
+- `document.body.classList.add("select-none")` prevents text selection during drag
+- `w-80` class REMOVED from `<aside>` in Sidebar.astro — width controlled by inline style from Custom Element
+- `relative` class ADDED to `<aside>` to contain the absolute-positioned handle
+- CSS rules in `global.css`: `pm-sidebar-resize` transition, hover highlight, `aside[data-resizing]` transition:none + user-select:none
+- `aside.collapsed { width: 0 !important }` already overrides inline style — collapse/expand works without changes to sidebar.ts
+- Script import: `<script>import "../../scripts/sidebar-resize.ts";</script>` inside Sidebar.astro
+
 ## Testing Infrastructure (added feature/test-runner)
 
 - Test runner: Vitest v4 + happy-dom, configured via `vitest.config.ts` using `getViteConfig()` from `astro/config`

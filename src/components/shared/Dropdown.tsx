@@ -14,9 +14,10 @@ interface Props {
   buttonClass?: string;
   panelClass?: string;
   label?: string;
+  icon?: string;
 }
 
-export default function Dropdown({ items, selected, onSelect, buttonClass = "", panelClass = "", label }: Props) {
+export default function Dropdown({ items, selected, onSelect, buttonClass = "", panelClass = "", label, icon }: Props) {
   const isOpen = useSignal(false);
   const focusedIndex = useSignal(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -113,6 +114,9 @@ export default function Dropdown({ items, selected, onSelect, buttonClass = "", 
         onClick={() => (isOpen.value ? close() : open())}
         onKeyDown={handleButtonKeyDown}
       >
+        {icon && (
+          <span class="w-4 h-4 flex-shrink-0" aria-hidden="true" dangerouslySetInnerHTML={{ __html: icon }} />
+        )}
         <span class={selectedItem?.colorClass}>{selectedItem?.label}</span>
         <svg class="w-4 h-4 text-pm-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <polyline points="6 9 12 15 18 9" />

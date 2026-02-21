@@ -31,6 +31,8 @@
 - Documentation fix in `bunfig.toml` mitigates discoverability but does not make `bun test` functional
 
 ### Common MEDIA Issues (always check these)
+- Plan specifies icons by filename → always verify import and render in component
+- Conditional rendering criteria (e.g., "hidden when X") → verify ALL conditions are in the guard
 - `dangerouslySetInnerHTML` with HTTP response data → XSS if not escaped
 - Missing `aria-controls` on tabs, `aria-level` on trees, `role="listbox"` on dropdowns
 - Duplicate DOM IDs when reusable components used multiple times on same page
@@ -48,6 +50,13 @@
   pattern in shared Tabs.tsx), (2) Arrow key navigation does not call .focus() on new active tab,
   (3) new StorageService tab methods (getTabs/setTabs/getActiveTabId/setActiveTabId) untested in
   storage.test.ts despite being in Phase 6 scope.
+- environment-variables (2026-02-21): APPROVED on Review #2. 255 tests pass, build succeeds, 0 TS errors.
+  Initial 2 MEDIA issues fixed correctly: (1) icon prop added to Dropdown + imported in EnvironmentSelector,
+  (2) activeEnvironmentId guard added to showVariableIndicator in RequestBar. 1 BAJA fixed (redundant aria-label).
+  Positive: first time keyboard navigation in EnvironmentPanel was correctly implemented on first try.
+  Fix pattern: extending shared Dropdown with optional `icon?: string` prop + dangerouslySetInnerHTML is safe
+  for static SVG assets (not user data). Always distinguish static-asset SVG (safe) vs HTTP-response data (XSS risk).
+  Storage uncovered lines 88-90,174-198 are carry-forward from add-requests phase (not new).
 
 ## Optimized Review Checklist
 

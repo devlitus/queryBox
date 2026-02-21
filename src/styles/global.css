@@ -87,6 +87,21 @@ aside.collapsed {
   overflow: hidden;
 }
 
+/* Sidebar resize handle */
+pm-sidebar-resize {
+  transition: background-color 150ms ease;
+}
+
+pm-sidebar-resize:hover,
+aside[data-resizing] pm-sidebar-resize {
+  background-color: color-mix(in srgb, var(--color-pm-accent) 40%, transparent);
+}
+
+aside[data-resizing] {
+  transition: none;
+  user-select: none;
+}
+
 /* Mobile sidebar open state */
 aside.mobile-open {
   transform: translateX(0) !important;
