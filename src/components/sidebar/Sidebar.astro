@@ -5,7 +5,11 @@ import CollectionPanel from "./CollectionPanel";
 import HistoryPanel from "./HistoryPanel";
 ---
 
-<aside class="fixed lg:relative inset-y-0 left-0 z-50 w-64 bg-pm-bg-secondary border-r border-pm-border flex flex-col overflow-hidden -translate-x-full lg:translate-x-0 transition-transform duration-300" role="navigation" aria-label="Sidebar navigation">
+<aside
+	class="fixed lg:relative inset-y-0 left-0 z-50 bg-pm-bg-secondary border-r border-pm-border flex flex-col overflow-hidden -translate-x-full lg:translate-x-0 transition-transform duration-300 relative"
+	role="navigation"
+	aria-label="Sidebar navigation"
+>
 	<SidebarTabs>
 		<!-- Collections panel -->
 		<div
@@ -40,4 +44,12 @@ import HistoryPanel from "./HistoryPanel";
 			<HistoryPanel client:idle />
 		</div>
 	</SidebarTabs>
+	<pm-sidebar-resize
+		class="absolute top-0 right-0 h-full w-1 z-10 cursor-col-resize hover:bg-pm-accent/30 transition-colors"
+		aria-hidden="true"
+	></pm-sidebar-resize>
 </aside>
+
+<script>
+	import "../../scripts/sidebar-resize.ts";
+</script>

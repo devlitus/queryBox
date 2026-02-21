@@ -570,6 +570,181 @@ Low - Verification and validation only.
 
 ---
 
+## Phase 8: Sidebar Resize Handle
+
+### Objective
+Make the sidebar resizable by dragging a handle on its right edge, allowing users to adjust the sidebar width to accommodate wider content (especially the KeyValueTable in EnvironmentPanel). The width persists across sessions via localStorage.
+
+### Architecture Decision Record
+
+#### ADR-8: Implementation Approach for Resize Handle
+
+**Decision**: Extend the existing `PmSidebarToggle` Custom Element pattern by creating a new `PmSidebarResize` Custom Element in `src/scripts/sidebar-resize.ts`. The resize logic lives entirely in vanilla TypeScript (no Preact island), consistent with how `sidebar.ts` works.
+
+**Alternatives considered**:
+- **Integrate into existing `sidebar.ts`**: Would mix two responsibilities (toggle and resize) in one file, violating SRP. The toggle element listens to clicks; the resize element handles drag events -- very different interaction models.
+- **Preact island component**: The resize handle does not need reactive signals or Preact rendering. It manipulates inline styles on the `<aside>` element via DOM APIs. A Custom Element is simpler, has zero hydration overhead, and follows the existing sidebar pattern.
+- **CSS `resize` property**: Only works on overflow:scroll/auto elements, not suitable for a sidebar in a grid layout. Provides no visual handle customization.
+
+**Justification**: A dedicated Custom Element keeps the toggle logic untouched, is framework-agnostic, and integrates cleanly with the existing `<aside>` element. The handle is a simple `<div>` element that the Custom Element manages for pointer events.
+
+#### ADR-8b: Sidebar Width in CSS Grid
+
+**Decision**: Replace the Tailwind `w-80` class on `<aside>` with an inline `style="width: Npx"` set from localStorage (default 320px). The `grid-cols-[auto_1fr]` in AppLayout.astro already uses `auto` for the sidebar column, so the aside's explicit pixel width is respected by the grid without any changes to AppLayout.
+
+**Justification**: The `auto` grid column sizing means the column adapts to the intrinsic/explicit width of the aside element. Setting `width` via inline style gives us precise pixel control during drag operations. The Tailwind `w-80` class must be removed because it sets `width: 20rem` which conflicts with the dynamic inline style.
+
+#### ADR-8c: localStorage Key
+
+**Decision**: Use key `qb:sidebar-width` via `StorageService.getItem`/`setItem` (the generic primitives already exported). This follows the `qb:` prefix convention. The existing `sidebar-collapsed` key (used directly by `sidebar.ts`) will need to interact correctly: when the sidebar is collapsed, width is 0; when expanded, the saved width is restored.
+
+### Prerequisites
+None -- this phase is independent of Phases 1-7 and can be implemented at any time. It only touches sidebar-related files.
+
+### Detailed Tasks
+
+1. **Create `src/scripts/sidebar-resize.ts`** -- a new Custom Element `PmSidebarResize`:
+
+   The Custom Element is placed as a child inside the `<aside>` element, positioned at the right edge.
+
+   **Constants**:
+   - `MIN_WIDTH = 180` (px) -- minimum sidebar width
+   - `MAX_WIDTH = 600` (px) -- maximum sidebar width
+   - `DEFAULT_WIDTH = 320` (px) -- default width (matches current `w-80`)
+   - `STORAGE_KEY = "qb:sidebar-width"` -- localStorage key
+
+   **connectedCallback**:
+   - Find the parent `<aside>` element (or query `document.querySelector("aside")`).
+   - Read saved width from localStorage: `localStorage.getItem(STORAGE_KEY)`, parse to number, clamp between MIN/MAX. Fallback to DEFAULT_WIDTH.
+   - Set `aside.style.width = "${width}px"`.
+   - Style itself as the drag handle: absolute position on the right edge of the aside, full height, 4px wide, with `cursor: col-resize`. Visually, show a subtle 1px vertical line (`border-right: 1px solid var(--color-pm-border)`) that becomes more prominent on hover (2px, accent color).
+   - Register `pointerdown` event listener on itself.
+
+   **Drag logic** (using Pointer Events API for unified mouse/touch):
+   - On `pointerdown`:
+     - Call `setPointerCapture(e.pointerId)` to receive all subsequent pointer events even if the pointer leaves the element.
+     - Record `startX = e.clientX` and `startWidth = aside.offsetWidth`.
+     - Add `pointermove` and `pointerup` listeners on `this`.
+     - Add class `select-none` to `document.body` to prevent text selection during drag.
+     - Add a data attribute `data-resizing` to the aside for optional CSS styling during drag.
+   - On `pointermove`:
+     - Calculate `newWidth = startWidth + (e.clientX - startX)`.
+     - Clamp between MIN_WIDTH and MAX_WIDTH.
+     - Set `aside.style.width = "${newWidth}px"`.
+   - On `pointerup`:
+     - Remove `pointermove` and `pointerup` listeners.
+     - Release pointer capture.
+     - Remove `select-none` from `document.body`.
+     - Remove `data-resizing` from aside.
+     - Save the final width to localStorage: `localStorage.setItem(STORAGE_KEY, String(aside.offsetWidth))`.
+
+   **Integration with collapse/expand** (sidebar.ts):
+   - When the sidebar is collapsed (`aside.collapsed`), the CSS rule `aside.collapsed { width: 0 !important }` overrides the inline style. No special handling needed in the resize element.
+   - When the sidebar is expanded (collapsed class removed), `sidebar.ts` does NOT set any width -- so the inline style set by `PmSidebarResize` remains in effect. This is correct behavior.
+   - Edge case: if `sidebar.ts` expand() is called and somehow the inline style was cleared, the `connectedCallback` already sets it on page load.
+
+   **Register the Custom Element**:
+   ```
+   if (!customElements.get("pm-sidebar-resize")) {
+     customElements.define("pm-sidebar-resize", PmSidebarResize);
+   }
+   ```
+
+2. **Modify `src/components/sidebar/Sidebar.astro`**:
+
+   - Remove the `w-80` class from the `<aside>` element. The width will now be controlled by the inline style set by `PmSidebarResize` on initialization.
+   - Add the resize handle element inside the `<aside>`, as the last child (so it renders on top):
+     ```html
+     <pm-sidebar-resize
+       class="absolute top-0 right-0 h-full w-1 z-10 cursor-col-resize hover:bg-pm-accent/30 transition-colors"
+       aria-hidden="true"
+     ></pm-sidebar-resize>
+     ```
+   - Add a `<script>` tag to import the new module:
+     ```html
+     <script>
+       import "../scripts/sidebar-resize.ts";
+     </script>
+     ```
+   - Ensure the `<aside>` has `relative` positioning (add `relative` class if not present) so the absolute-positioned handle is contained within it.
+
+3. **Modify `src/styles/global.css`**:
+
+   - Add a style for the resize handle hover/active states to make the drag affordance clearer:
+     ```css
+     /* Sidebar resize handle */
+     pm-sidebar-resize {
+       transition: background-color 150ms ease;
+     }
+
+     pm-sidebar-resize:hover,
+     aside[data-resizing] pm-sidebar-resize {
+       background-color: color-mix(in srgb, var(--color-pm-accent) 40%, transparent);
+     }
+
+     aside[data-resizing] {
+       user-select: none;
+     }
+     ```
+
+   - Modify the existing `aside` transition rule to include width smoothly ONLY when NOT actively dragging (to avoid lag during drag):
+     ```css
+     aside {
+       transition: width 200ms ease-in-out;
+     }
+
+     aside[data-resizing] {
+       transition: none;
+     }
+     ```
+
+4. **Verify interaction with `sidebar.ts` collapse/expand**:
+   - When collapsed: `aside.collapsed` sets `width: 0 !important` -- overrides inline style. Correct.
+   - When expanded: `aside.collapsed` is removed, inline `style="width: Npx"` takes effect. Correct.
+   - The resize handle is hidden when collapsed because the aside has `overflow: hidden` and width 0.
+   - On page load, `PmSidebarResize.connectedCallback()` runs and sets the initial width from localStorage. If the sidebar is also collapsed on load (via `sidebar-collapsed` key), the `.collapsed` CSS rule takes precedence. When the user later expands, the inline width is revealed. Correct.
+
+5. **Double-click to reset width** (nice-to-have, low effort):
+   - In `PmSidebarResize`, add a `dblclick` event listener that resets the sidebar width to `DEFAULT_WIDTH` and saves to localStorage. This provides a quick way to reset if the user drags to an undesirable width.
+
+### Affected Files
+- `src/scripts/sidebar-resize.ts` - CREATE
+- `src/components/sidebar/Sidebar.astro` - MODIFY
+- `src/styles/global.css` - MODIFY
+
+### Applied Best Practices
+- **Single Responsibility Principle (SRP)**: The resize logic is in its own Custom Element (`PmSidebarResize`), completely separate from the toggle logic in `PmSidebarToggle`. Each element does one thing.
+- **DRY**: Follows the existing Custom Element pattern established by `sidebar.ts`, `tabs.ts`, `dropdown.ts`, and `tree.ts`.
+- **KISS**: Pointer Events API provides unified mouse/touch handling in a single event model. No external libraries needed.
+- **Progressive Enhancement**: The sidebar works without the resize handle (falls back to default width). The Custom Element upgrades the experience when JavaScript runs.
+- **Performance**: Pointer events fire at high frequency during drag. Setting `style.width` on each frame is lightweight because it only triggers layout on the sidebar and its sibling (grid recalculation is O(1) for a 2-column grid). No requestAnimationFrame throttling needed.
+- **Accessibility**: The resize handle has `aria-hidden="true"` since it is a visual-only enhancement. Keyboard users can use the sidebar at its default width. If keyboard resize is desired in the future, `role="separator"` with `aria-orientation="vertical"` and arrow key handlers can be added, but this is YAGNI for now.
+
+### Completion Criteria
+- [ ] Resize handle is visible as a subtle vertical line on the right edge of the sidebar
+- [ ] Hovering over the handle changes the cursor to `col-resize` and highlights the handle
+- [ ] Dragging the handle resizes the sidebar width in real-time
+- [ ] Width is clamped between 180px and 600px
+- [ ] Releasing the drag saves the width to localStorage (`qb:sidebar-width`)
+- [ ] Reloading the page restores the saved width
+- [ ] Collapse/expand toggle still works correctly (collapsed = 0 width, expanded = saved width)
+- [ ] Double-clicking the handle resets to default width (320px)
+- [ ] No text selection occurs during drag
+- [ ] No visible jank or lag during drag
+- [ ] The grid layout (`grid-cols-[auto_1fr]`) correctly adapts to the new sidebar width
+- [ ] `bun astro check` and `bun build` pass
+
+### Risks and Mitigations
+- Risk: Inline style `width` conflicts with Tailwind's `w-80` class --> Mitigation: Remove `w-80` from the aside. The Custom Element sets the initial width from localStorage or the DEFAULT_WIDTH constant.
+- Risk: Transition on width causes lag during drag --> Mitigation: Add `data-resizing` attribute during drag and a CSS rule `aside[data-resizing] { transition: none; }` to disable the transition during active dragging.
+- Risk: Pointer capture not supported in old browsers --> Mitigation: `setPointerCapture` is supported in all modern browsers (Chrome 55+, Firefox 59+, Safari 13+). queryBox targets modern desktop browsers.
+- Risk: Mobile sidebar uses `position: fixed` with `transform` for show/hide, not width-based --> Mitigation: The resize handle is only meaningful on desktop (`lg:` breakpoint). On mobile/tablet, the fixed sidebar is full-width or hidden. The resize handle can be hidden on small screens with `hidden lg:block` class, but since the aside itself is hidden on mobile, the handle is naturally invisible.
+
+### Complexity Estimation
+Low-Medium - The Pointer Events API is well-documented and straightforward. The main complexity is ensuring correct interaction with the existing collapse/expand behavior and CSS transitions, but the analysis above confirms they are compatible.
+
+---
+
 ## Dependency Graph
 
 ```
@@ -592,9 +767,11 @@ Phase 3    Phase 4       Phase 5
         |
         v
     Phase 7 (Verification)
+
+Phase 8 (Sidebar Resize) --- INDEPENDENT, can run in parallel with any phase
 ```
 
-Phases 3, 4, and 5 are independent of each other and can be implemented in parallel after Phase 2. Phase 6 depends on Phases 1, 2, and 3. Phase 7 is the final verification step.
+Phases 3, 4, and 5 are independent of each other and can be implemented in parallel after Phase 2. Phase 6 depends on Phases 1, 2, and 3. Phase 7 is the final verification step. Phase 8 is completely independent and can be implemented at any time.
 
 ---
 
@@ -614,11 +791,13 @@ Phases 3, 4, and 5 are independent of each other and can be implemented in paral
 | `src/components/header/EnvironmentSelector.tsx` | CREATE | 4 |
 | `src/components/header/HeaderBar.astro` | MODIFY | 4 |
 | `src/components/sidebar/EnvironmentPanel.tsx` | CREATE | 5 |
-| `src/components/sidebar/Sidebar.astro` | MODIFY | 5 |
+| `src/components/sidebar/Sidebar.astro` | MODIFY | 5, 8 |
 | `src/components/sidebar/EnvironmentList.astro` | DELETE | 5 |
 | `src/components/sidebar/EnvironmentItem.astro` | DELETE | 5 |
 | `src/components/shared/VariableIndicator.tsx` | CREATE | 6 |
 | `src/components/request/RequestBar.tsx` | MODIFY | 6 |
 | `vitest.config.ts` | VERIFY | 7 |
+| `src/scripts/sidebar-resize.ts` | CREATE | 8 |
+| `src/styles/global.css` | MODIFY | 8 |
 
-**Total**: 7 CREATE, 6 MODIFY, 2 DELETE, 1 VERIFY = 16 files touched.
+**Total**: 8 CREATE, 7 MODIFY, 2 DELETE, 1 VERIFY = 18 files touched.
