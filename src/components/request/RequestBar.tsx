@@ -1,13 +1,23 @@
+import { useEffect, useRef } from "preact/hooks";
 import MethodSelector from "./MethodSelector";
 import { requestState, requestStatus } from "../../stores/http-store";
 import { updateUrl } from "../../stores/http-store";
 import { sendRequest, cancelRequest } from "../../services/http-client";
-import { showSaveModal } from "../../stores/ui-store";
+import { showSaveModal, shouldFocusUrl } from "../../stores/ui-store";
 
 export default function RequestBar() {
   const status = requestStatus.value;
   const isLoading = status === "loading";
   const url = requestState.value.url;
+  const urlInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus the URL input when a new tab is created
+  useEffect(() => {
+    if (shouldFocusUrl.value) {
+      urlInputRef.current?.focus();
+      shouldFocusUrl.value = false;
+    }
+  }, [shouldFocusUrl.value]);
 
   return (
     <div class="p-4 flex flex-col md:flex-row md:items-center gap-2 md:gap-0">
@@ -15,6 +25,7 @@ export default function RequestBar() {
       <div class="flex items-center gap-0 flex-1">
         <MethodSelector />
         <input
+          ref={urlInputRef}
           type="url"
           placeholder="Enter a URL (e.g., https://jsonplaceholder.typicode.com/todos/1)"
           value={url}

@@ -1,4 +1,4 @@
-import type { RequestState } from "../types/http";
+import type { RequestState, Tab } from "../types/http";
 import type { Collection, HistoryEntry } from "../types/persistence";
 
 // ---------------------------------------------------------------------------
@@ -8,6 +8,8 @@ import type { Collection, HistoryEntry } from "../types/persistence";
 const HISTORY_KEY = "qb:history";
 const COLLECTIONS_KEY = "qb:collections";
 const WORKBENCH_KEY = "qb:workbench";
+const TABS_KEY = "qb:tabs";
+const ACTIVE_TAB_KEY = "qb:active-tab";
 
 // ---------------------------------------------------------------------------
 // Generic read/write primitives
@@ -79,6 +81,16 @@ function isCollection(value: unknown): value is Collection {
   );
 }
 
+function isTab(value: unknown): value is Tab {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v["id"] === "string" &&
+    typeof v["name"] === "string" &&
+    isRequestState(v["request"])
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Domain helpers
 // ---------------------------------------------------------------------------
@@ -132,6 +144,34 @@ function setWorkbenchState(state: RequestState): void {
   setItem(WORKBENCH_KEY, state);
 }
 
+function getTabs(): Tab[] {
+  const data = getItem<unknown>(TABS_KEY, []);
+  if (!Array.isArray(data)) {
+    removeItem(TABS_KEY);
+    return [];
+  }
+  const valid = data.filter(isTab);
+  // If we lost data due to corruption, persist the cleaned array
+  if (valid.length !== data.length) {
+    setItem(TABS_KEY, valid);
+  }
+  return valid;
+}
+
+function setTabs(tabsToSave: Tab[]): void {
+  setItem(TABS_KEY, tabsToSave);
+}
+
+function getActiveTabId(): string | null {
+  const data = getItem<unknown>(ACTIVE_TAB_KEY, null);
+  if (typeof data !== "string") return null;
+  return data;
+}
+
+function setActiveTabId(id: string): void {
+  setItem(ACTIVE_TAB_KEY, id);
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -144,6 +184,12 @@ export const StorageService = {
   setHistory,
   getCollections,
   setCollections,
+  /** @deprecated Use getTabs/setTabs instead. Kept for migration support. */
   getWorkbenchState,
+  /** @deprecated Use getTabs/setTabs instead. Kept for migration support. */
   setWorkbenchState,
+  getTabs,
+  setTabs,
+  getActiveTabId,
+  setActiveTabId,
 } as const;

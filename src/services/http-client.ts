@@ -16,16 +16,16 @@
  * Future improvements: local proxy server via Astro SSR API routes.
  */
 
-import { batch } from "@preact/signals";
 import {
   requestState,
-  responseState,
-  requestStatus,
-  requestError,
   fullUrl,
 } from "../stores/http-store";
+import { updateActiveTabResponse, activeTab, renameTab } from "../stores/tab-store";
 import { addHistoryEntry } from "../stores/history-store";
 import type { HttpError } from "../types/http";
+
+/** Default tab name that triggers auto-rename. */
+const DEFAULT_TAB_NAME = "New Request";
 
 /** Maximum response body size to display (5 MB). Larger bodies are truncated. */
 const MAX_BODY_SIZE = 5 * 1024 * 1024;
@@ -42,7 +42,7 @@ export function cancelRequest(): void {
 
 /**
  * Sends the HTTP request described by the current requestState signal.
- * Updates responseState, requestStatus, and requestError signals based on the result.
+ * Updates the active tab's response, requestStatus, and requestError via tab-store.
  */
 export async function sendRequest(): Promise<void> {
   // Cancel any previous in-flight request
@@ -55,31 +55,25 @@ export async function sendRequest(): Promise<void> {
 
   // Basic URL validation
   if (!url) {
-    requestError.value = {
+    updateActiveTabResponse(null, "error", {
       message: "Please enter a URL before sending a request.",
       type: "unknown",
-    };
-    requestStatus.value = "error";
+    });
     return;
   }
 
   try {
     new URL(url);
   } catch {
-    requestError.value = {
+    updateActiveTabResponse(null, "error", {
       message: `"${url}" is not a valid URL. Make sure it starts with http:// or https://.`,
       type: "unknown",
-    };
-    requestStatus.value = "error";
+    });
     return;
   }
 
   // Set loading state
-  batch(() => {
-    requestStatus.value = "loading";
-    responseState.value = null;
-    requestError.value = null;
-  });
+  updateActiveTabResponse(null, "loading", null);
 
   // Build headers
   const fetchHeaders = new Headers();
@@ -143,8 +137,8 @@ export async function sendRequest(): Promise<void> {
 
     const contentType = response.headers.get("Content-Type") ?? "";
 
-    batch(() => {
-      responseState.value = {
+    updateActiveTabResponse(
+      {
         status: response.status,
         statusText: response.statusText,
         headers: responseHeaders,
@@ -152,9 +146,10 @@ export async function sendRequest(): Promise<void> {
         contentType,
         time: timeMs,
         size,
-      };
-      requestStatus.value = "success";
-    });
+      },
+      "success",
+      null
+    );
 
     addHistoryEntry({
       method: state.method,
@@ -163,14 +158,24 @@ export async function sendRequest(): Promise<void> {
       statusText: response.statusText,
       requestSnapshot: structuredClone(state),
     });
+
+    // Auto-rename tab to URL hostname if still using the default name
+    const currentTab = activeTab.value;
+    if (currentTab && currentTab.name === DEFAULT_TAB_NAME) {
+      try {
+        const hostname = new URL(url).hostname;
+        if (hostname) {
+          renameTab(currentTab.id, hostname);
+        }
+      } catch {
+        // Ignore rename on malformed URL (shouldn't happen since we validated above)
+      }
+    }
   } catch (err: unknown) {
     if (signal.aborted) {
-      batch(() => {
-        requestError.value = {
-          message: "Request was cancelled.",
-          type: "abort",
-        };
-        requestStatus.value = "error";
+      updateActiveTabResponse(null, "error", {
+        message: "Request was cancelled.",
+        type: "abort",
       });
       return;
     }
@@ -211,9 +216,6 @@ export async function sendRequest(): Promise<void> {
       };
     }
 
-    batch(() => {
-      requestError.value = httpError;
-      requestStatus.value = "error";
-    });
+    updateActiveTabResponse(null, "error", httpError);
   }
 }

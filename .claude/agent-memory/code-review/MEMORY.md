@@ -43,6 +43,11 @@
 - DRY: reusable components implemented well (KeyValueTable, CodeViewer, Badge)
 - Factories: typed factory functions in `src/test/factories.ts`
 - Vitest: `vi.resetModules()` + dynamic import pattern correctly applied
+- add-requests (2026-02-20): Near-perfect implementation. All 7 phases complete, 159 tests pass.
+  Only BAJA issues: (1) tabIndex should be -1 for inactive tabs per WAI-ARIA (codebase has correct
+  pattern in shared Tabs.tsx), (2) Arrow key navigation does not call .focus() on new active tab,
+  (3) new StorageService tab methods (getTabs/setTabs/getActiveTabId/setActiveTabId) untested in
+  storage.test.ts despite being in Phase 6 scope.
 
 ## Optimized Review Checklist
 
