@@ -23,6 +23,7 @@ import { updateActiveTabResponse, activeTab, renameTab } from "../stores/tab-sto
 import { addHistoryEntry } from "../stores/history-store";
 import { activeVariablesMap } from "../stores/environment-store";
 import { interpolateRequest } from "../utils/interpolation";
+import { resolveAuthHeaders } from "../utils/auth";
 import { buildUrlWithParams } from "../utils/url";
 import type { HttpError } from "../types/http";
 
@@ -87,8 +88,26 @@ export async function sendRequest(): Promise<void> {
   // Set loading state
   updateActiveTabResponse(null, "loading", null);
 
-  // Build headers from interpolated state
+  // Resolve authentication headers/params from the (already-interpolated) auth config
+  const resolvedAuth = resolveAuthHeaders(interpolatedState.auth);
+
+  // Inject API Key query params into the URL (if auth type is apikey with addTo="query")
+  // searchParams.set() is used intentionally: auth config is the source of truth for auth params.
+  let finalUrl = resolvedUrl;
+  if (resolvedAuth.params.length > 0) {
+    const urlObj = new URL(resolvedUrl);
+    for (const p of resolvedAuth.params) {
+      urlObj.searchParams.set(p.key, p.value);
+    }
+    finalUrl = urlObj.toString();
+  }
+
+  // Build headers: auth headers first (lower precedence), then user-defined headers.
+  // User-defined headers can override auth headers if keys collide (principle of least surprise).
   const fetchHeaders = new Headers();
+  for (const h of resolvedAuth.headers) {
+    fetchHeaders.set(h.key, h.value);
+  }
   for (const h of interpolatedState.headers.filter((h) => h.enabled && h.key !== "")) {
     fetchHeaders.set(h.key, h.value);
   }
@@ -122,7 +141,7 @@ export async function sendRequest(): Promise<void> {
   const startTime = performance.now();
 
   try {
-    const response = await fetch(resolvedUrl, fetchOptions);
+    const response = await fetch(finalUrl, fetchOptions);
     const endTime = performance.now();
     const timeMs = Math.round(endTime - startTime);
 
