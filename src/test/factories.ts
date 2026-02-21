@@ -1,5 +1,6 @@
 import type { RequestState, KeyValuePair } from "../types/http";
 import type { HistoryEntry, Collection, SavedRequest } from "../types/persistence";
+import type { Environment, EnvironmentVariable } from "../types/environment";
 
 export function makeKeyValuePair(overrides?: Partial<KeyValuePair>): KeyValuePair {
   return {
@@ -53,6 +54,26 @@ export function makeCollection(overrides?: Partial<Collection>): Collection {
     name: "Test Collection",
     createdAt: 1700000000000,
     requests: [],
+    ...overrides,
+  };
+}
+
+export function makeEnvironmentVariable(overrides?: Partial<EnvironmentVariable>): EnvironmentVariable {
+  return {
+    id: "var-id-1",
+    key: "baseUrl",
+    value: "https://api.example.com",
+    enabled: true,
+    ...overrides,
+  };
+}
+
+export function makeEnvironment(overrides?: Partial<Environment>): Environment {
+  return {
+    id: "env-id-1",
+    name: "Test Environment",
+    createdAt: 1700000000000,
+    variables: [],
     ...overrides,
   };
 }

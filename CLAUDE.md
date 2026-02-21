@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 This is an Astro 5 project named "queryBox" built with Bun as the package manager. The project uses TypeScript with strict mode enabled.
+Always respond in Spanish when discussing the project, but keep all code and technical terms in English.
 
 ## Development Commands
 

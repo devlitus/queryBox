@@ -40,13 +40,17 @@
 - client:idle recommended for sidebar islands (non-critical, defer hydration)
 - Plan: `docs/local-persistence/local-persistence-plan.md`
 
-## Codebase State (verified 2026-02-20)
+## Codebase State (verified 2026-02-21)
 - Mock data files removed (src/data/ emptied in http-client feature)
-- Sidebar panels show static placeholders: CollectionTree.astro, HistoryList.astro, EnvironmentList.astro
+- Sidebar: CollectionPanel.tsx (client:idle), HistoryPanel.tsx (client:idle), EnvironmentList.astro (placeholder)
 - sidebar.ts Custom Element already uses localStorage for collapse state (key: "sidebar-collapsed")
 - Badge.astro has method color mapping (pm-method-*) - needs .tsx equivalent for islands
 - pm-tabs Custom Element in tabs.ts handles tab switching via hidden class toggle on [data-panel] divs
 - RequestBar.tsx calls sendRequest() from http-client.ts; success path is the hook point for history
+- TabBar.tsx + TabBarItem.tsx are Preact islands (converted from .astro in add-requests feature)
+- http-store.ts uses computed proxies delegating to activeTab in tab-store
+- StorageService keys: qb:history, qb:collections, qb:tabs, qb:active-tab (qb:workbench deprecated)
+- environment.svg icon already exists in src/assets/icons/
 
 ## Astro + Preact Integration (from official docs 2026-02-19)
 - Install: `bun add @astrojs/preact preact @preact/signals`
@@ -69,17 +73,15 @@
 - Works in .tsx files automatically via Vite plugin
 - Namespaces: --color-*, --font-*, --text-*, --spacing-*, --radius-*
 
-### Add Requests / Multi-Tab (Phase 5) - PLANNED
-- TabBar.astro + TabItem.astro are static, no event handlers
-- http-store has SINGLE requestState signal (no multi-tab concept)
-- StorageService persists single workbench state under qb:workbench
-- Plan: Convert TabBar to Preact island, create tab-store.ts with Tab[] signal
+### Add Requests / Multi-Tab (Phase 5) - COMPLETED
+- TabBar.tsx + TabBarItem.tsx are Preact islands (converted from .astro)
+- tab-store.ts has Tab[] signal + activeTabId signal + computed activeTab
 - http-store refactored to computed proxies reading from active tab
-- Persistence: qb:tabs + qb:active-tab keys, migrate from qb:workbench
+- Persistence: qb:tabs + qb:active-tab keys, migrated from qb:workbench
 - Max 20 tabs, response bodies excluded from persistence
 - Plan: `docs/add-requests/add-requests-plan.md`
 
-### Test Runner (Phase 4) - PLANNED
+### Test Runner (Phase 4) - COMPLETED
 - Vitest chosen over Bun test and Jest (official Astro recommendation)
 - `getViteConfig()` from `astro/config` reuses Vite pipeline in tests
 - happy-dom for DOM simulation (localStorage, crypto, URL)
@@ -88,6 +90,31 @@
 - Store tests need `vi.resetModules()` due to module-level signal init
 - Coverage: v8 provider, 70% threshold, only utils/services/stores
 - Plan: `docs/test-runner/test-runner-plan.md`
+
+### Environment Variables (Phase 6) - PLANNED
+- Types: Environment, EnvironmentVariable in src/types/environment.ts
+- Interpolation: pure utility in src/utils/interpolation.ts ({{var}} syntax, single-pass)
+- Store: environment-store.ts following collection-store pattern (signal + explicit persist)
+- StorageService: qb:environments, qb:active-environment keys
+- Header: EnvironmentSelector.tsx (client:load) with existing Dropdown component
+- Sidebar: EnvironmentPanel.tsx (client:idle) replaces EnvironmentList.astro placeholder
+- KeyValueTable reused for variable editing (same shape as KeyValuePair)
+- http-client.ts: interpolate at send time, history stores unresolved templates
+- Plan: `docs/environment-variables/environment-variables-plan.md`
+
+## Store Pattern (verified 2026-02-21)
+- All stores: module-level signal initialized from StorageService.getX()
+- Action functions: mutate signal, then explicit StorageService.setX() call
+- Exception: tab-store uses effect() for auto-persist (many mutation points)
+- Tests: vi.resetModules() + dynamic import in beforeEach for fresh module state
+- Tests: vi.mock() for StorageService and ui-store at module level + inside beforeEach
+
+## Shared Components (verified 2026-02-21)
+- Dropdown.tsx: generic listbox with keyboard nav, used by MethodSelector + BodyEditor
+- Tabs.tsx: reusable tab component with ARIA, used by RequestConfigTabs + ResponseTabs
+- KeyValueTable.tsx: checkbox + key + value + description(opt) + delete, used by params/headers
+- MethodBadge.tsx: colored method label for sidebar items
+- CodeViewer.tsx: JSON syntax highlighting for response body
 
 ## Skills Available
 - `ui-design-system`: TailwindCSS + Radix + shadcn/ui patterns

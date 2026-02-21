@@ -1,5 +1,6 @@
 import type { RequestState, Tab } from "../types/http";
 import type { Collection, HistoryEntry } from "../types/persistence";
+import type { Environment, EnvironmentVariable } from "../types/environment";
 
 // ---------------------------------------------------------------------------
 // Storage keys
@@ -10,6 +11,8 @@ const COLLECTIONS_KEY = "qb:collections";
 const WORKBENCH_KEY = "qb:workbench";
 const TABS_KEY = "qb:tabs";
 const ACTIVE_TAB_KEY = "qb:active-tab";
+const ENVIRONMENTS_KEY = "qb:environments";
+const ACTIVE_ENV_KEY = "qb:active-environment";
 
 // ---------------------------------------------------------------------------
 // Generic read/write primitives
@@ -88,6 +91,29 @@ function isTab(value: unknown): value is Tab {
     typeof v["id"] === "string" &&
     typeof v["name"] === "string" &&
     isRequestState(v["request"])
+  );
+}
+
+function isEnvironmentVariable(value: unknown): value is EnvironmentVariable {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v["id"] === "string" &&
+    typeof v["key"] === "string" &&
+    typeof v["value"] === "string" &&
+    typeof v["enabled"] === "boolean"
+  );
+}
+
+function isEnvironment(value: unknown): value is Environment {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v["id"] === "string" &&
+    typeof v["name"] === "string" &&
+    typeof v["createdAt"] === "number" &&
+    Array.isArray(v["variables"]) &&
+    (v["variables"] as unknown[]).every(isEnvironmentVariable)
   );
 }
 
@@ -172,6 +198,37 @@ function setActiveTabId(id: string): void {
   setItem(ACTIVE_TAB_KEY, id);
 }
 
+function getEnvironments(): Environment[] {
+  const data = getItem<unknown>(ENVIRONMENTS_KEY, []);
+  if (!Array.isArray(data)) {
+    removeItem(ENVIRONMENTS_KEY);
+    return [];
+  }
+  const valid = data.filter(isEnvironment);
+  if (valid.length !== data.length) {
+    setItem(ENVIRONMENTS_KEY, valid);
+  }
+  return valid;
+}
+
+function setEnvironments(environments: Environment[]): void {
+  setItem(ENVIRONMENTS_KEY, environments);
+}
+
+function getActiveEnvironmentId(): string | null {
+  const data = getItem<unknown>(ACTIVE_ENV_KEY, null);
+  if (typeof data !== "string") return null;
+  return data;
+}
+
+function setActiveEnvironmentId(id: string | null): void {
+  if (id === null) {
+    removeItem(ACTIVE_ENV_KEY);
+  } else {
+    setItem(ACTIVE_ENV_KEY, id);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -192,4 +249,8 @@ export const StorageService = {
   setTabs,
   getActiveTabId,
   setActiveTabId,
+  getEnvironments,
+  setEnvironments,
+  getActiveEnvironmentId,
+  setActiveEnvironmentId,
 } as const;

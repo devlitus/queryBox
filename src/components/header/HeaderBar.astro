@@ -1,6 +1,7 @@
 ---
 import SearchInput from "./SearchInput.astro";
 import WorkspaceSelector from "./WorkspaceSelector.astro";
+import EnvironmentSelector from "./EnvironmentSelector";
 import homeIcon from "../../assets/icons/home.svg?raw";
 import settingsIcon from "../../assets/icons/settings.svg?raw";
 import bellIcon from "../../assets/icons/bell.svg?raw";
@@ -51,8 +52,10 @@ import menuIcon from "../../assets/icons/menu.svg?raw";
 		<SearchInput />
 	</div>
 
-	<!-- Right section: Settings, Notifications, Avatar -->
+	<!-- Right section: Environment selector, Settings, Notifications, Avatar -->
 	<div class="flex items-center gap-2">
+		<EnvironmentSelector client:load />
+
 		<button
 			type="button"
 			class="hidden md:inline-flex items-center justify-center w-8 h-8 rounded hover:bg-pm-bg-elevated transition-colors text-pm-text-secondary"

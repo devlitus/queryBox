@@ -67,6 +67,21 @@
 - Middle-click (button===1) on TabBarItem closes the tab
 - `vi.doMock()` (NOT `vi.mock`) must be used inside tests that reference local variables in their factory — `vi.mock` is hoisted and cannot access variables defined later in the test body
 
+## Environment Variables Feature (added feature/environment-variables)
+
+- Types: `src/types/environment.ts` — `EnvironmentVariable` and `Environment` interfaces
+- Interpolation utilities: `src/utils/interpolation.ts` — `interpolateVariables`, `extractVariableNames`, `hasVariables`, `interpolateRequest`
+- Store: `src/stores/environment-store.ts` — signals `environments`, `activeEnvironmentId`; computed `activeEnvironment`, `activeVariablesMap` (Map<string,string>)
+- Storage keys: `qb:environments`, `qb:active-environment` (null stored by removing the key)
+- http-client.ts reads `activeVariablesMap.value` — fast path when `variables.size > 0`; history stores UNRESOLVED (template) URL and state
+- UI: `EnvironmentSelector.tsx` (header, `client:load`), `EnvironmentPanel.tsx` (sidebar, `client:idle`), `VariableIndicator.tsx` (shared)
+- `setActiveEnvironmentId(null)` calls `removeItem()` — not `setItem(null)` — to clear the key
+- Regex `/\{\{([^}]+)\}\}/g` requires at least one non-`}` character between braces; `{{}}` does NOT match
+- VariableIndicator tooltip uses CSS `group-hover/indicator` named group variant for Tailwind
+- `Dropdown.tsx` accepts optional `icon?: string` prop (raw SVG string); rendered via `dangerouslySetInnerHTML` before the label `<span>`
+- SVG `?raw` imports in `.tsx` files: pass raw string to `dangerouslySetInnerHTML={{ __html: svgString }}` on a container `<span>`; `.astro` files use `<Fragment set:html={svgRaw} />`
+- VariableIndicator must check `activeEnvironmentId.value !== null` AND `hasVariables(url)` — indicator must be hidden when no env is active
+
 ## Testing Infrastructure (added feature/test-runner)
 
 - Test runner: Vitest v4 + happy-dom, configured via `vitest.config.ts` using `getViteConfig()` from `astro/config`
