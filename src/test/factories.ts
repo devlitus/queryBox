@@ -1,6 +1,8 @@
 import type { RequestState, KeyValuePair } from "../types/http";
 import type { HistoryEntry, Collection, SavedRequest } from "../types/persistence";
 import type { Environment, EnvironmentVariable } from "../types/environment";
+import type { AuthConfig } from "../types/auth";
+import { DEFAULT_AUTH } from "../types/auth";
 
 export function makeKeyValuePair(overrides?: Partial<KeyValuePair>): KeyValuePair {
   return {
@@ -19,8 +21,18 @@ export function makeRequestState(overrides?: Partial<RequestState>): RequestStat
     params: [],
     headers: [],
     body: { mode: "none", contentType: "json", raw: "" },
+    auth: DEFAULT_AUTH,
     ...overrides,
   };
+}
+
+/**
+ * Factory for AuthConfig. Defaults to { type: "none" }.
+ * Use a complete AuthConfig to create a specific auth type:
+ *   makeAuthConfig({ type: "basic", basic: { username: "u", password: "p" } })
+ */
+export function makeAuthConfig(config?: AuthConfig): AuthConfig {
+  return config ?? { type: "none" };
 }
 
 export function makeHistoryEntry(overrides?: Partial<HistoryEntry>): HistoryEntry {

@@ -539,4 +539,194 @@ describe("loadRequest", () => {
     expect(httpStore.requestStatus.value).toBe("idle");
     expect(httpStore.requestError.value).toBeNull();
   });
+
+  it("applies DEFAULT_AUTH fallback when loading snapshot without auth field", () => {
+    // Simulate a snapshot from before the auth feature (no auth field)
+    const snapshotWithoutAuth = makeRequestState();
+    // Force-remove auth to simulate old persisted data without the auth field
+    const legacySnapshot = { ...snapshotWithoutAuth } as Record<string, unknown>;
+    delete legacySnapshot["auth"];
+    httpStore.loadRequest(legacySnapshot as unknown as Parameters<typeof httpStore.loadRequest>[0]);
+    expect(httpStore.requestState.value.auth).toEqual({ type: "none" });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// updateAuthType
+// ---------------------------------------------------------------------------
+
+describe("updateAuthType", () => {
+  it("changes auth type to 'none' and resets config", () => {
+    // First set a bearer token, then switch to none
+    httpStore.updateAuthType("bearer");
+    httpStore.updateBearerToken("token", "mytoken");
+    httpStore.updateAuthType("none");
+    expect(httpStore.requestState.value.auth).toEqual({ type: "none" });
+  });
+
+  it("changes auth type to 'basic' and initializes with empty fields", () => {
+    httpStore.updateAuthType("basic");
+    const auth = httpStore.requestState.value.auth;
+    expect(auth.type).toBe("basic");
+    if (auth.type === "basic") {
+      expect(auth.basic.username).toBe("");
+      expect(auth.basic.password).toBe("");
+    }
+  });
+
+  it("changes auth type to 'bearer' and initializes with default prefix 'Bearer'", () => {
+    httpStore.updateAuthType("bearer");
+    const auth = httpStore.requestState.value.auth;
+    expect(auth.type).toBe("bearer");
+    if (auth.type === "bearer") {
+      expect(auth.bearer.token).toBe("");
+      expect(auth.bearer.prefix).toBe("Bearer");
+    }
+  });
+
+  it("changes auth type to 'apikey' and initializes with 'header' addTo", () => {
+    httpStore.updateAuthType("apikey");
+    const auth = httpStore.requestState.value.auth;
+    expect(auth.type).toBe("apikey");
+    if (auth.type === "apikey") {
+      expect(auth.apikey.key).toBe("");
+      expect(auth.apikey.value).toBe("");
+      expect(auth.apikey.addTo).toBe("header");
+    }
+  });
+
+  it("switching type reinitializes config — previous type's data does not bleed over", () => {
+    httpStore.updateAuthType("bearer");
+    httpStore.updateBearerToken("token", "secret-token");
+    // Now switch to basic — should start fresh, no token residue
+    httpStore.updateAuthType("basic");
+    const auth = httpStore.requestState.value.auth;
+    expect(auth.type).toBe("basic");
+    if (auth.type === "basic") {
+      expect(auth.basic.username).toBe("");
+      expect(auth.basic.password).toBe("");
+    }
+  });
+
+  it("does not affect other request fields (url, method) when changing auth type", () => {
+    httpStore.updateUrl("https://example.com");
+    httpStore.updateMethod("POST");
+    httpStore.updateAuthType("bearer");
+    expect(httpStore.requestState.value.url).toBe("https://example.com");
+    expect(httpStore.requestState.value.method).toBe("POST");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// updateBasicAuth
+// ---------------------------------------------------------------------------
+
+describe("updateBasicAuth", () => {
+  it("updates username field", () => {
+    httpStore.updateAuthType("basic");
+    httpStore.updateBasicAuth("username", "john");
+    const auth = httpStore.requestState.value.auth;
+    expect(auth.type).toBe("basic");
+    if (auth.type === "basic") {
+      expect(auth.basic.username).toBe("john");
+    }
+  });
+
+  it("updates password field", () => {
+    httpStore.updateAuthType("basic");
+    httpStore.updateBasicAuth("password", "s3cr3t");
+    const auth = httpStore.requestState.value.auth;
+    if (auth.type === "basic") {
+      expect(auth.basic.password).toBe("s3cr3t");
+    }
+  });
+
+  it("preserves other fields when updating one field", () => {
+    httpStore.updateAuthType("basic");
+    httpStore.updateBasicAuth("username", "alice");
+    httpStore.updateBasicAuth("password", "pass123");
+    const auth = httpStore.requestState.value.auth;
+    if (auth.type === "basic") {
+      expect(auth.basic.username).toBe("alice");
+      expect(auth.basic.password).toBe("pass123");
+    }
+  });
+
+  it("is a no-op when auth type is not 'basic'", () => {
+    httpStore.updateAuthType("bearer");
+    const authBefore = httpStore.requestState.value.auth;
+    httpStore.updateBasicAuth("username", "ignored");
+    expect(httpStore.requestState.value.auth).toEqual(authBefore);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// updateBearerToken
+// ---------------------------------------------------------------------------
+
+describe("updateBearerToken", () => {
+  it("updates token field", () => {
+    httpStore.updateAuthType("bearer");
+    httpStore.updateBearerToken("token", "abc123");
+    const auth = httpStore.requestState.value.auth;
+    if (auth.type === "bearer") {
+      expect(auth.bearer.token).toBe("abc123");
+    }
+  });
+
+  it("updates prefix field", () => {
+    httpStore.updateAuthType("bearer");
+    httpStore.updateBearerToken("prefix", "Token");
+    const auth = httpStore.requestState.value.auth;
+    if (auth.type === "bearer") {
+      expect(auth.bearer.prefix).toBe("Token");
+    }
+  });
+
+  it("is a no-op when auth type is not 'bearer'", () => {
+    httpStore.updateAuthType("basic");
+    const authBefore = httpStore.requestState.value.auth;
+    httpStore.updateBearerToken("token", "ignored");
+    expect(httpStore.requestState.value.auth).toEqual(authBefore);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// updateApiKey
+// ---------------------------------------------------------------------------
+
+describe("updateApiKey", () => {
+  it("updates key field", () => {
+    httpStore.updateAuthType("apikey");
+    httpStore.updateApiKey("key", "X-API-Key");
+    const auth = httpStore.requestState.value.auth;
+    if (auth.type === "apikey") {
+      expect(auth.apikey.key).toBe("X-API-Key");
+    }
+  });
+
+  it("updates value field", () => {
+    httpStore.updateAuthType("apikey");
+    httpStore.updateApiKey("value", "my-secret");
+    const auth = httpStore.requestState.value.auth;
+    if (auth.type === "apikey") {
+      expect(auth.apikey.value).toBe("my-secret");
+    }
+  });
+
+  it("updates addTo to 'query'", () => {
+    httpStore.updateAuthType("apikey");
+    httpStore.updateApiKey("addTo", "query");
+    const auth = httpStore.requestState.value.auth;
+    if (auth.type === "apikey") {
+      expect(auth.apikey.addTo).toBe("query");
+    }
+  });
+
+  it("is a no-op when auth type is not 'apikey'", () => {
+    httpStore.updateAuthType("none");
+    const authBefore = httpStore.requestState.value.auth;
+    httpStore.updateApiKey("key", "ignored");
+    expect(httpStore.requestState.value.auth).toEqual(authBefore);
+  });
 });

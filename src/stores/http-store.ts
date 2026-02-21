@@ -1,5 +1,7 @@
 import { computed } from "@preact/signals";
 import type { HttpMethod, KeyValuePair, RequestState, BodyMode, ContentType } from "../types/http";
+import type { AuthType } from "../types/auth";
+import { DEFAULT_AUTH } from "../types/auth";
 import { parseQueryParams, buildUrlWithParams, formatBytes } from "../utils/url";
 import {
   activeTab,
@@ -163,6 +165,53 @@ export function resetResponse(): void {
   updateActiveTabResponse(null, "idle", null);
 }
 
+// ---------------------------------------------------------------------------
+// Auth action functions
+// ---------------------------------------------------------------------------
+
+/**
+ * Changes the auth type for the active tab's request.
+ * Reinitializes the config for the new type to avoid residual state from the
+ * previous type (e.g. switching from bearer back to basic shouldn't leak tokens).
+ */
+export function updateAuthType(type: AuthType): void {
+  switch (type) {
+    case "none":
+      updateActiveTabRequest({ auth: { type: "none" } });
+      break;
+    case "basic":
+      updateActiveTabRequest({ auth: { type: "basic", basic: { username: "", password: "" } } });
+      break;
+    case "bearer":
+      updateActiveTabRequest({ auth: { type: "bearer", bearer: { token: "", prefix: "Bearer" } } });
+      break;
+    case "apikey":
+      updateActiveTabRequest({ auth: { type: "apikey", apikey: { key: "", value: "", addTo: "header" } } });
+      break;
+  }
+}
+
+/** Updates a field in the Basic Auth config. */
+export function updateBasicAuth(field: "username" | "password", value: string): void {
+  const current = requestState.value.auth;
+  if (current.type !== "basic") return;
+  updateActiveTabRequest({ auth: { ...current, basic: { ...current.basic, [field]: value } } });
+}
+
+/** Updates a field in the Bearer Token config. */
+export function updateBearerToken(field: "token" | "prefix", value: string): void {
+  const current = requestState.value.auth;
+  if (current.type !== "bearer") return;
+  updateActiveTabRequest({ auth: { ...current, bearer: { ...current.bearer, [field]: value } } });
+}
+
+/** Updates a field in the API Key config. */
+export function updateApiKey(field: "key" | "value" | "addTo", value: string): void {
+  const current = requestState.value.auth;
+  if (current.type !== "apikey") return;
+  updateActiveTabRequest({ auth: { ...current, apikey: { ...current.apikey, [field]: value } } });
+}
+
 /**
  * Loads a saved request snapshot into the active tab's workbench.
  * Regenerates all KeyValuePair IDs to avoid key collisions when the same
@@ -173,6 +222,9 @@ export function loadRequest(snapshot: RequestState): void {
     ...snapshot,
     params: snapshot.params.map((p) => ({ ...p, id: crypto.randomUUID() })),
     headers: snapshot.headers.map((h) => ({ ...h, id: crypto.randomUUID() })),
+    // Migration guard: snapshots from history/collections saved before the auth
+    // feature won't have an `auth` field. Fall back to DEFAULT_AUTH.
+    auth: snapshot.auth ?? DEFAULT_AUTH,
   });
   resetResponse();
 }

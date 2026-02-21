@@ -400,4 +400,82 @@ describe("persistence", () => {
     expect(freshStore.tabs.value[0].response).toBeNull();
     expect(freshStore.tabs.value[0].requestStatus).toBe("idle");
   });
+
+  it("applies DEFAULT_AUTH migration guard when persisted tab has no auth field", async () => {
+    vi.resetModules();
+    // Simulate a tab saved before the auth feature (no auth field on request)
+    const requestWithoutAuth = {
+      method: "GET" as const,
+      url: "https://legacy.com",
+      params: [],
+      headers: [],
+      body: { mode: "none" as const, contentType: "json" as const, raw: "" },
+      // auth field intentionally absent
+    };
+    vi.doMock("../services/storage", () => ({
+      StorageService: {
+        getTabs: () => [
+          {
+            id: "legacy-tab",
+            name: "Legacy Tab",
+            request: requestWithoutAuth,
+            response: null,
+            requestStatus: "idle",
+            requestError: null,
+            isDirty: false,
+          },
+        ],
+        setTabs: vi.fn(),
+        getActiveTabId: () => "legacy-tab",
+        setActiveTabId: vi.fn(),
+        getWorkbenchState: () => null,
+        removeItem: vi.fn(),
+      },
+    }));
+    vi.doMock("./ui-store", () => ({
+      shouldFocusUrl: { value: false },
+      showSaveModal: { value: false },
+    }));
+    const freshStore = await import("./tab-store");
+    // Migration guard should have applied DEFAULT_AUTH
+    expect(freshStore.tabs.value[0].request.auth).toEqual({ type: "none" });
+  });
+
+  it("preserves existing auth field when tab already has auth config", async () => {
+    vi.resetModules();
+    const requestWithAuth = makeRequestState({
+      auth: { type: "bearer", bearer: { token: "mytoken", prefix: "Bearer" } },
+    });
+    vi.doMock("../services/storage", () => ({
+      StorageService: {
+        getTabs: () => [
+          {
+            id: "auth-tab",
+            name: "Auth Tab",
+            request: requestWithAuth,
+            response: null,
+            requestStatus: "idle",
+            requestError: null,
+            isDirty: false,
+          },
+        ],
+        setTabs: vi.fn(),
+        getActiveTabId: () => "auth-tab",
+        setActiveTabId: vi.fn(),
+        getWorkbenchState: () => null,
+        removeItem: vi.fn(),
+      },
+    }));
+    vi.doMock("./ui-store", () => ({
+      shouldFocusUrl: { value: false },
+      showSaveModal: { value: false },
+    }));
+    const freshStore = await import("./tab-store");
+    // Existing auth config must be preserved, not overwritten
+    const auth = freshStore.tabs.value[0].request.auth;
+    expect(auth.type).toBe("bearer");
+    if (auth.type === "bearer") {
+      expect(auth.bearer.token).toBe("mytoken");
+    }
+  });
 });
