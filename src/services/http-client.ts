@@ -18,12 +18,12 @@
 
 import {
   requestState,
-  fullUrl,
 } from "../stores/http-store";
 import { updateActiveTabResponse, activeTab, renameTab } from "../stores/tab-store";
 import { addHistoryEntry } from "../stores/history-store";
 import { activeVariablesMap } from "../stores/environment-store";
-import { interpolateRequest, interpolateVariables } from "../utils/interpolation";
+import { interpolateRequest } from "../utils/interpolation";
+import { buildUrlWithParams } from "../utils/url";
 import type { HttpError } from "../types/http";
 
 /** Default tab name that triggers auto-rename. */
@@ -53,16 +53,17 @@ export async function sendRequest(): Promise<void> {
   const signal = abortController.signal;
 
   const state = requestState.value;
-  const url = fullUrl.value;
 
   // Interpolate variables from the active environment (fast path when no env is active)
   const variables = activeVariablesMap.value;
   const interpolatedState = variables.size > 0
     ? interpolateRequest(state, variables)
     : state;
-  const resolvedUrl = variables.size > 0
-    ? interpolateVariables(url, variables)
-    : url;
+
+  // Build resolvedUrl AFTER interpolation, from the already-interpolated state.
+  // Using fullUrl.value here would URL-encode {{...}} before interpolation,
+  // making the regex unable to match them.
+  const resolvedUrl = buildUrlWithParams(interpolatedState.url, interpolatedState.params);
 
   // Basic URL validation
   if (!resolvedUrl) {
@@ -165,7 +166,7 @@ export async function sendRequest(): Promise<void> {
     // History stores the original (unresolved) state and URL — preserving templates for re-use
     addHistoryEntry({
       method: state.method,
-      url: url,
+      url: state.url,
       status: response.status,
       statusText: response.statusText,
       requestSnapshot: structuredClone(state),
