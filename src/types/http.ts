@@ -21,6 +21,7 @@ export interface RequestState {
     contentType: ContentType;
     raw: string;
   };
+  auth: import("./auth").AuthConfig;
 }
 
 export interface ResponseState {

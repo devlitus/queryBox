@@ -1,4 +1,5 @@
 import type { RequestState } from "../types/http";
+import type { AuthConfig } from "../types/auth";
 
 /** Regex to match {{variableName}} placeholders. Captures the name inside the braces. */
 const VARIABLE_REGEX = /\{\{([^}]+)\}\}/g;
@@ -84,5 +85,46 @@ export function interpolateRequest(
     raw: interpolateVariables(clone.body.raw, variables),
   };
 
+  clone.auth = interpolateAuth(clone.auth, variables);
+
   return clone;
+}
+
+/**
+ * Interpolates environment variables in auth config fields.
+ * - basic:  username and password are interpolated.
+ * - bearer: token is interpolated; prefix is NOT (it's a fixed protocol keyword like "Bearer").
+ * - apikey: key and value are interpolated.
+ * - none:   returned unchanged.
+ */
+function interpolateAuth(auth: AuthConfig, variables: Map<string, string>): AuthConfig {
+  switch (auth.type) {
+    case "none":
+      return auth;
+    case "basic":
+      return {
+        ...auth,
+        basic: {
+          username: interpolateVariables(auth.basic.username, variables),
+          password: interpolateVariables(auth.basic.password, variables),
+        },
+      };
+    case "bearer":
+      return {
+        ...auth,
+        bearer: {
+          ...auth.bearer,
+          token: interpolateVariables(auth.bearer.token, variables),
+        },
+      };
+    case "apikey":
+      return {
+        ...auth,
+        apikey: {
+          ...auth.apikey,
+          key: interpolateVariables(auth.apikey.key, variables),
+          value: interpolateVariables(auth.apikey.value, variables),
+        },
+      };
+  }
 }

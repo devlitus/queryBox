@@ -265,4 +265,96 @@ describe("interpolateRequest", () => {
     expect(result.body.mode).toBe("raw");
     expect(result.body.contentType).toBe("xml");
   });
+
+  // -------------------------------------------------------------------------
+  // Auth interpolation
+  // -------------------------------------------------------------------------
+
+  it("auth type 'none' passes through unchanged", () => {
+    const vars = new Map([["x", "y"]]);
+    const request = makeRequestState({ auth: { type: "none" } });
+    const result = interpolateRequest(request, vars);
+    expect(result.auth).toEqual({ type: "none" });
+  });
+
+  it("interpolates basic.username with variables", () => {
+    const vars = new Map([["user", "admin"]]);
+    const request = makeRequestState({
+      auth: { type: "basic", basic: { username: "{{user}}", password: "pass" } },
+    });
+    const result = interpolateRequest(request, vars);
+    expect(result.auth.type).toBe("basic");
+    if (result.auth.type === "basic") {
+      expect(result.auth.basic.username).toBe("admin");
+      expect(result.auth.basic.password).toBe("pass");
+    }
+  });
+
+  it("interpolates basic.password with variables", () => {
+    const vars = new Map([["secret", "p@ssw0rd"]]);
+    const request = makeRequestState({
+      auth: { type: "basic", basic: { username: "user", password: "{{secret}}" } },
+    });
+    const result = interpolateRequest(request, vars);
+    if (result.auth.type === "basic") {
+      expect(result.auth.basic.password).toBe("p@ssw0rd");
+    }
+  });
+
+  it("interpolates bearer.token with variables", () => {
+    const vars = new Map([["token", "jwt.abc.def"]]);
+    const request = makeRequestState({
+      auth: { type: "bearer", bearer: { token: "{{token}}", prefix: "Bearer" } },
+    });
+    const result = interpolateRequest(request, vars);
+    if (result.auth.type === "bearer") {
+      expect(result.auth.bearer.token).toBe("jwt.abc.def");
+    }
+  });
+
+  it("does NOT interpolate bearer.prefix (it is a fixed protocol keyword)", () => {
+    const vars = new Map([["Bearer", "REPLACED"]]);
+    const request = makeRequestState({
+      auth: { type: "bearer", bearer: { token: "mytoken", prefix: "Bearer" } },
+    });
+    const result = interpolateRequest(request, vars);
+    if (result.auth.type === "bearer") {
+      // prefix must remain "Bearer", not "REPLACED" — it doesn't contain {{...}}
+      expect(result.auth.bearer.prefix).toBe("Bearer");
+    }
+  });
+
+  it("interpolates apikey.key with variables", () => {
+    const vars = new Map([["headerName", "X-Custom-Key"]]);
+    const request = makeRequestState({
+      auth: { type: "apikey", apikey: { key: "{{headerName}}", value: "secret", addTo: "header" } },
+    });
+    const result = interpolateRequest(request, vars);
+    if (result.auth.type === "apikey") {
+      expect(result.auth.apikey.key).toBe("X-Custom-Key");
+    }
+  });
+
+  it("interpolates apikey.value with variables", () => {
+    const vars = new Map([["apiSecret", "supersecret"]]);
+    const request = makeRequestState({
+      auth: { type: "apikey", apikey: { key: "X-API-Key", value: "{{apiSecret}}", addTo: "query" } },
+    });
+    const result = interpolateRequest(request, vars);
+    if (result.auth.type === "apikey") {
+      expect(result.auth.apikey.value).toBe("supersecret");
+      // addTo must be preserved
+      expect(result.auth.apikey.addTo).toBe("query");
+    }
+  });
+
+  it("does not mutate original auth config during interpolation (immutability)", () => {
+    const vars = new Map([["tok", "replaced"]]);
+    const request = makeRequestState({
+      auth: { type: "bearer", bearer: { token: "{{tok}}", prefix: "Bearer" } },
+    });
+    const originalToken = (request.auth as Extract<typeof request.auth, { type: "bearer" }>).bearer.token;
+    interpolateRequest(request, vars);
+    expect((request.auth as Extract<typeof request.auth, { type: "bearer" }>).bearer.token).toBe(originalToken);
+  });
 });
