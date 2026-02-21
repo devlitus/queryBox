@@ -8,7 +8,7 @@
 
 ## Project Structure (verified 2026-02-19)
 - Components: header/, request/, response/, shared/, sidebar/, workbench/
-- 4 Custom Elements: tabs.ts, dropdown.ts, tree.ts, sidebar.ts in src/scripts/
+- 5 Custom Elements: tabs.ts, dropdown.ts, tree.ts, sidebar.ts, sidebar-resize.ts in src/scripts/
 - 5 mock data files: src/data/mock-{collections,environments,history,request,response}.ts
 - Layouts: Layout.astro (base HTML) + AppLayout.astro (grid shell)
 - Design tokens: pm-* namespace (pm-bg-*, pm-text-*, pm-method-*, pm-status-*, pm-syntax-*)
@@ -44,12 +44,15 @@
 - Mock data files removed (src/data/ emptied in http-client feature)
 - Sidebar: CollectionPanel.tsx (client:idle), HistoryPanel.tsx (client:idle), EnvironmentList.astro (placeholder)
 - sidebar.ts Custom Element already uses localStorage for collapse state (key: "sidebar-collapsed")
+- Sidebar.astro aside uses w-80 (320px) class, overflow-hidden, relative positioning needed for resize handle
+- AppLayout.astro grid-cols-[auto_1fr] -- auto adapts to aside explicit width
+- global.css: aside transition width 200ms, aside.collapsed width 0 !important
 - Badge.astro has method color mapping (pm-method-*) - needs .tsx equivalent for islands
 - pm-tabs Custom Element in tabs.ts handles tab switching via hidden class toggle on [data-panel] divs
 - RequestBar.tsx calls sendRequest() from http-client.ts; success path is the hook point for history
 - TabBar.tsx + TabBarItem.tsx are Preact islands (converted from .astro in add-requests feature)
 - http-store.ts uses computed proxies delegating to activeTab in tab-store
-- StorageService keys: qb:history, qb:collections, qb:tabs, qb:active-tab (qb:workbench deprecated)
+- StorageService keys: qb:history, qb:collections, qb:tabs, qb:active-tab, qb:sidebar-width (qb:workbench deprecated)
 - environment.svg icon already exists in src/assets/icons/
 
 ## Astro + Preact Integration (from official docs 2026-02-19)

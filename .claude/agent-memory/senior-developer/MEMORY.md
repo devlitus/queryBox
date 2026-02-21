@@ -82,6 +82,21 @@
 - SVG `?raw` imports in `.tsx` files: pass raw string to `dangerouslySetInnerHTML={{ __html: svgString }}` on a container `<span>`; `.astro` files use `<Fragment set:html={svgRaw} />`
 - VariableIndicator must check `activeEnvironmentId.value !== null` AND `hasVariables(url)` — indicator must be hidden when no env is active
 
+## Sidebar Resize Handle (added feature/environment-variables Phase 8)
+
+- Custom Element: `src/scripts/sidebar-resize.ts` — `PmSidebarResize` class, same pattern as `PmSidebarToggle`
+- Storage key: `qb:sidebar-width` — raw localStorage (NOT via StorageService, consistent with `sidebar-collapsed` key)
+- Constants: `MIN_WIDTH=180`, `MAX_WIDTH=600`, `DEFAULT_WIDTH=320` (px)
+- Pointer Events API: `setPointerCapture` / `releasePointerCapture` for unified mouse+touch drag
+- `pointerdown`/`pointermove`/`pointerup` registered on the element itself (not document)
+- `data-resizing` attribute on `<aside>` disables CSS transition during drag (prevents lag)
+- `document.body.classList.add("select-none")` prevents text selection during drag
+- `w-80` class REMOVED from `<aside>` in Sidebar.astro — width controlled by inline style from Custom Element
+- `relative` class ADDED to `<aside>` to contain the absolute-positioned handle
+- CSS rules in `global.css`: `pm-sidebar-resize` transition, hover highlight, `aside[data-resizing]` transition:none + user-select:none
+- `aside.collapsed { width: 0 !important }` already overrides inline style — collapse/expand works without changes to sidebar.ts
+- Script import: `<script>import "../../scripts/sidebar-resize.ts";</script>` inside Sidebar.astro
+
 ## Testing Infrastructure (added feature/test-runner)
 
 - Test runner: Vitest v4 + happy-dom, configured via `vitest.config.ts` using `getViteConfig()` from `astro/config`
