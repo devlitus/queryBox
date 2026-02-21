@@ -1,5 +1,6 @@
 import { signal, computed, effect } from "@preact/signals";
 import type { Tab, RequestState, ResponseState, RequestStatus, HttpError } from "../types/http";
+import { DEFAULT_AUTH } from "../types/auth";
 import { StorageService } from "../services/storage";
 import { shouldFocusUrl } from "./ui-store";
 
@@ -17,6 +18,7 @@ export const DEFAULT_REQUEST: RequestState = {
     contentType: "json",
     raw: "",
   },
+  auth: DEFAULT_AUTH,
 };
 
 const MAX_TABS = 20;
@@ -69,9 +71,15 @@ function initializeTabs(): { initialTabs: Tab[]; initialActiveId: string } {
     return { initialTabs: [freshTab], initialActiveId: freshTab.id };
   }
 
-  // Restore persisted tabs, stripping response data (responses are ephemeral)
+  // Restore persisted tabs, stripping response data (responses are ephemeral).
+  // Migration guard: tabs persisted before the auth feature won't have a `auth` field.
+  // Apply DEFAULT_AUTH as fallback via nullish coalescing to ensure backward compatibility.
   const restoredTabs = persisted.map((t) => ({
     ...t,
+    request: {
+      ...t.request,
+      auth: t.request.auth ?? DEFAULT_AUTH,
+    },
     response: null,
     requestStatus: "idle" as RequestStatus,
     requestError: null,

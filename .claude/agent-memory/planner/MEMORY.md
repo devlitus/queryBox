@@ -94,7 +94,7 @@
 - Coverage: v8 provider, 70% threshold, only utils/services/stores
 - Plan: `docs/test-runner/test-runner-plan.md`
 
-### Environment Variables (Phase 6) - PLANNED
+### Environment Variables (Phase 6) - COMPLETED
 - Types: Environment, EnvironmentVariable in src/types/environment.ts
 - Interpolation: pure utility in src/utils/interpolation.ts ({{var}} syntax, single-pass)
 - Store: environment-store.ts following collection-store pattern (signal + explicit persist)
@@ -118,6 +118,19 @@
 - KeyValueTable.tsx: checkbox + key + value + description(opt) + delete, used by params/headers
 - MethodBadge.tsx: colored method label for sidebar items
 - CodeViewer.tsx: JSON syntax highlighting for response body
+
+### Authentication System (Phase 7) - PLANNED
+- Auth as field of RequestState (not separate store) -- same pattern as body
+- Discriminated union AuthConfig: none | basic | bearer | apikey
+- Types: src/types/auth.ts, utils: src/utils/auth.ts (resolveAuthHeaders pure fn)
+- UI: AuthEditor.tsx as new tab in RequestConfigTabs (alongside Params/Headers/Body)
+- Auth headers injected at send-time in http-client.ts (not visible in headers list)
+- User headers override auth headers (auth applied first, then user headers)
+- API Key supports header or query param injection
+- Bearer Token prefix configurable (default "Bearer")
+- interpolateRequest() extended to interpolate auth fields
+- Migration guard: tabs without auth field get DEFAULT_AUTH on restore
+- Plan: `docs/auth-system/auth-system-plan.md`
 
 ## Skills Available
 - `ui-design-system`: TailwindCSS + Radix + shadcn/ui patterns

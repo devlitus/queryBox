@@ -3,9 +3,10 @@ import Tabs from "../shared/Tabs";
 import ParamsTable from "./ParamsTable";
 import HeadersTable from "./HeadersTable";
 import BodyEditor from "./BodyEditor";
+import AuthEditor from "./AuthEditor";
 import { requestState } from "../../stores/http-store";
 
-const TAB_IDS = ["params", "headers", "body"] as const;
+const TAB_IDS = ["params", "headers", "body", "auth"] as const;
 type TabId = typeof TAB_IDS[number];
 
 export default function RequestConfigTabs() {
@@ -21,6 +22,7 @@ export default function RequestConfigTabs() {
     { id: "params",  label: "Params",  count: enabledParamsCount },
     { id: "headers", label: "Headers", count: enabledHeadersCount },
     { id: "body",    label: "Body" },
+    { id: "auth",    label: "Auth" },
   ];
 
   return (
@@ -38,6 +40,9 @@ export default function RequestConfigTabs() {
       </div>
       <div id="req-tabpanel-body" role="tabpanel" class={`p-4 ${activeTab.value !== "body" ? "hidden" : ""}`}>
         <BodyEditor />
+      </div>
+      <div id="req-tabpanel-auth" role="tabpanel" class={`p-4 ${activeTab.value !== "auth" ? "hidden" : ""}`}>
+        <AuthEditor />
       </div>
     </Tabs>
   );
