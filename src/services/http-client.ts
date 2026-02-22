@@ -1,24 +1,20 @@
 /**
  * HTTP Client Service
  *
- * CORS LIMITATION NOTICE:
- * This client uses the browser's native fetch() API. Browser security policies
- * enforce CORS (Cross-Origin Resource Sharing). Requests to APIs that do not
- * include the `Access-Control-Allow-Origin` response header will be blocked.
+ * All requests are routed through the server-side proxy (/api/proxy) to eliminate
+ * CORS restrictions. The proxy forwards requests server-to-server where CORS does not apply.
  *
- * This is a known browser limitation, NOT a bug in queryBox.
- *
- * For testing, use CORS-enabled APIs such as:
- * - https://jsonplaceholder.typicode.com (free, CORS-enabled)
- * - https://httpbin.org (flexible HTTP testing)
- * - Your own API with permissive CORS headers
- *
- * Future improvements: local proxy server via Astro SSR API routes.
+ * This allows queryBox to make requests to any external API regardless of their CORS configuration.
  */
 
 import {
   requestState,
 } from "../stores/http-store";
+import type {
+  ProxyRequest,
+  ProxySuccessResponse,
+  ProxyErrorResponse,
+} from "../types/proxy";
 import { updateActiveTabResponse, activeTab, renameTab } from "../stores/tab-store";
 import { addHistoryEntry } from "../stores/history-store";
 import { activeVariablesMap } from "../stores/environment-store";
@@ -138,43 +134,97 @@ export async function sendRequest(): Promise<void> {
     fetchOptions.body = interpolatedState.body.raw;
   }
 
+  // Convert Headers object to plain Record for the proxy
+  const headersRecord: Record<string, string> = {};
+  fetchHeaders.forEach((value, key) => {
+    headersRecord[key] = value;
+  });
+
+  // Build ProxyRequest payload
+  const proxyPayload: ProxyRequest = {
+    url: finalUrl,
+    method: interpolatedState.method,
+    headers: headersRecord,
+    ...(hasBody && { body: interpolatedState.body.raw }),
+  };
+
   const startTime = performance.now();
 
   try {
-    const response = await fetch(finalUrl, fetchOptions);
+    // Send request through the proxy
+    const proxyResponse = await fetch("/api/proxy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(proxyPayload),
+      signal,
+    });
+
     const endTime = performance.now();
     const timeMs = Math.round(endTime - startTime);
 
-    // Read body as text (always; JSON pretty-printing is handled in display)
-    let bodyText = await response.text();
+    // Handle proxy-level errors (rate limit, timeout, network, etc.)
+    if (!proxyResponse.ok) {
+      const errorData: ProxyErrorResponse = await proxyResponse.json();
 
-    // Truncate very large bodies
-    if (bodyText.length > MAX_BODY_SIZE) {
-      bodyText = bodyText.slice(0, MAX_BODY_SIZE) +
-        "\n\n[Response truncated: body exceeds 5 MB limit]";
+      if (proxyResponse.status === 429) {
+        updateActiveTabResponse(null, "error", {
+          message: errorData.message,
+          type: "rate-limit",
+        });
+        return;
+      }
+
+      if (proxyResponse.status === 504) {
+        updateActiveTabResponse(null, "error", {
+          message: errorData.message,
+          type: "timeout",
+        });
+        return;
+      }
+
+      if (proxyResponse.status === 502) {
+        updateActiveTabResponse(null, "error", {
+          message: errorData.message,
+          type: "network",
+        });
+        return;
+      }
+
+      if (proxyResponse.status === 403) {
+        updateActiveTabResponse(null, "error", {
+          message: errorData.message,
+          type: "forbidden",
+        });
+        return;
+      }
+
+      // Other proxy errors
+      updateActiveTabResponse(null, "error", {
+        message: errorData.message,
+        type: "unknown",
+      });
+      return;
     }
 
-    // Calculate size from Content-Length or actual body length
-    const contentLengthHeader = response.headers.get("Content-Length");
-    const size = contentLengthHeader
-      ? parseInt(contentLengthHeader, 10)
-      : new Blob([bodyText]).size;
+    // Parse successful proxy response
+    const successData: ProxySuccessResponse = await proxyResponse.json();
 
-    // Extract response headers
+    // Calculate size from the actual body length
+    const size = new Blob([successData.body]).size;
+
+    // Convert headers from Record to Array format
     const responseHeaders: Array<{ key: string; value: string }> = [];
-    response.headers.forEach((value, key) => {
+    for (const [key, value] of Object.entries(successData.headers)) {
       responseHeaders.push({ key, value });
-    });
-
-    const contentType = response.headers.get("Content-Type") ?? "";
+    }
 
     updateActiveTabResponse(
       {
-        status: response.status,
-        statusText: response.statusText,
+        status: successData.status,
+        statusText: successData.statusText,
         headers: responseHeaders,
-        body: bodyText,
-        contentType,
+        body: successData.body,
+        contentType: successData.contentType,
         time: timeMs,
         size,
       },
@@ -186,8 +236,8 @@ export async function sendRequest(): Promise<void> {
     addHistoryEntry({
       method: state.method,
       url: state.url,
-      status: response.status,
-      statusText: response.statusText,
+      status: successData.status,
+      statusText: successData.statusText,
       requestSnapshot: structuredClone(state),
     });
 
@@ -215,7 +265,7 @@ export async function sendRequest(): Promise<void> {
     let httpError: HttpError;
 
     if (err instanceof TypeError) {
-      // Detect CORS by checking the error message
+      // With the proxy, CORS errors should not occur, but we keep detection as fallback
       const message = err.message.toLowerCase();
       const isCors = message.includes("cors") ||
         message.includes("cross-origin") ||
@@ -225,9 +275,8 @@ export async function sendRequest(): Promise<void> {
       if (isCors) {
         httpError = {
           message:
-            "The request was blocked by the browser's CORS policy. " +
-            "The target API must include 'Access-Control-Allow-Origin' in its response headers. " +
-            "Try testing with https://jsonplaceholder.typicode.com or https://httpbin.org instead.",
+            "Network error: Failed to connect to the proxy server. " +
+            "Please check your internet connection and try again.",
           type: "cors",
         };
       } else {
