@@ -129,6 +129,19 @@ If the code-review agent finds ALTA or MEDIA issues:
 2. Launch the `code-review` agent again to verify fixes
 3. Repeat until code-review approves with ✅
 
+### 5. Security Audit (optional — security-auditor agent)
+
+For features that involve API endpoints, server-side logic, user input processing, or external integrations:
+
+1. Launch the `security-auditor` agent using the Task tool
+2. The security-auditor will:
+   - Analyze the attack surface of the new/changed code
+   - Check for OWASP Top 10 vulnerabilities
+   - Review input validation, authentication, and authorization
+   - Audit dependencies for known CVEs
+   - Generate a security report in `docs/[feature]/audit/[feature]-security-audit.md`
+   - Rate the risk level (CRITICAL / HIGH / MEDIUM / LOW / CLEAN)
+
 ### When NOT to Use Agents
 
 Skip the agent workflow for:
