@@ -3,12 +3,11 @@ import { defineConfig } from 'astro/config';
 
 import tailwindcss from '@tailwindcss/vite';
 import preact from '@astrojs/preact';
-import node from '@astrojs/node';
+import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
-  output: 'static', // Static pages by default; API routes use `prerender = false`
-  adapter: node({ mode: 'standalone' }),
+  adapter: vercel(),
   integrations: [preact()],
   vite: {
     plugins: [tailwindcss()]
