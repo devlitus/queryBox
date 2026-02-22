@@ -1,6 +1,7 @@
 import RequestPanel from "../request/RequestPanel";
 import ResponsePanel from "../response/ResponsePanel";
 import SaveToCollectionModal from "./SaveToCollectionModal";
+import CodeSnippetModal from "./CodeSnippetModal";
 
 export default function HttpWorkbench() {
   return (
@@ -30,6 +31,9 @@ export default function HttpWorkbench() {
 
       {/* Save to collection modal — portal-rendered above all content */}
       <SaveToCollectionModal />
+
+      {/* Code snippet modal — portal-rendered above all content */}
+      <CodeSnippetModal />
     </div>
   );
 }
