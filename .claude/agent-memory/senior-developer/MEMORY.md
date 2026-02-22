@@ -165,3 +165,15 @@
 - Test files in `__tests__/` subdirectories work fine — vitest config uses `src/**/*.{test,spec}.{ts,tsx}`
 - Buttons in panel headers use `gap-0.5` between them; Export button has `disabled` + `opacity-50` when no data
 - ImportModal mounted inside each panel with conditional: `{showImportModal.value?.target === "collections" && <ImportModal />}`
+
+## Security Middleware (added feature/ai-error-diagnosis security fixes)
+
+- Middleware: `src/middleware.ts` — `onRequest: MiddlewareHandler` injects security headers on ALL responses
+- Headers set: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, `Content-Security-Policy`
+- HSTS only set when `import.meta.env.PROD` is true (HTTP dev server must not send HSTS)
+- CSP allows `style-src 'unsafe-inline'` (required by Tailwind v4), `connect-src https://api.groq.com`
+- Dropdown.tsx `icon` prop changed from `string` (dangerouslySetInnerHTML) to `ComponentType<{ class?: string }>` — eliminates XSS risk
+- EnvironmentSelector.tsx converted raw SVG `?raw` import to inline Preact component `EnvironmentIcon` to satisfy new Dropdown prop type
+- `/api/diagnose` endpoint: reads body as stream with 64KB hard limit (H-3), validates `method` as enum of VALID_HTTP_METHODS (M-4), checks Content-Length fast path
+- clientAddress fallback `|| "unknown"` replaced with explicit 400 response if `clientAddress` is falsy (M-1)
+- rate-limiter.ts: documented in-memory limitations (no persistence on restart, no multi-instance support) with TODO comment (M-2)

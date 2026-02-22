@@ -1,6 +1,28 @@
-import environmentIcon from "../../assets/icons/environment.svg?raw";
 import Dropdown from "../shared/Dropdown";
 import type { DropdownItem } from "../shared/Dropdown";
+
+/**
+ * Inline SVG icon for the environment selector.
+ * Defined as a Preact component to avoid dangerouslySetInnerHTML with raw strings.
+ */
+function EnvironmentIcon({ class: className }: { class?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class={className}
+      aria-hidden="true"
+    >
+      <circle cx="10" cy="10" r="8" />
+      <path d="M2 10h16M10 2c2 3 2 7 0 16m0-16c-2 3-2 7 0 16" />
+    </svg>
+  );
+}
 import {
   environments,
   activeEnvironmentId,
@@ -26,7 +48,7 @@ export default function EnvironmentSelector() {
       items={items}
       selected={selected}
       onSelect={handleSelect}
-      icon={environmentIcon}
+      icon={EnvironmentIcon}
       buttonClass="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded hover:bg-pm-bg-elevated transition-colors text-sm text-pm-text-secondary hover:text-pm-text-primary font-medium max-w-[160px]"
       panelClass="right-0 left-auto min-w-[180px]"
       label="Select active environment"

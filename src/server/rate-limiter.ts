@@ -1,6 +1,18 @@
 /**
  * In-memory sliding window rate limiter.
  * Tracks requests by IP address and enforces a maximum number of requests per time window.
+ *
+ * KNOWN LIMITATIONS (documented intentionally — no distributed solution required for this project):
+ *
+ * 1. State is not persisted across server restarts. If the server crashes or restarts,
+ *    all rate limit counters are reset, allowing up to MAX_REQUESTS new requests immediately.
+ *    This is acceptable for the current single-instance, developer-tool use case.
+ *
+ * 2. Not suitable for horizontal scaling. Each server instance maintains its own Map,
+ *    so N instances would each allow MAX_REQUESTS per window (effective limit: MAX_REQUESTS * N).
+ *    For multi-instance deployments, migrate to a distributed store (e.g., Redis + sliding window).
+ *
+ * TODO (future): Replace with a Redis-based rate limiter if this service is deployed at scale.
  */
 
 // Configuration from environment variables with fallback defaults

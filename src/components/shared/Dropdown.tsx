@@ -1,3 +1,4 @@
+import type { ComponentType } from "preact";
 import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 
@@ -14,10 +15,16 @@ interface Props {
   buttonClass?: string;
   panelClass?: string;
   label?: string;
-  icon?: string;
+  /**
+   * Optional icon rendered to the left of the selected label.
+   * Must be a Preact component (e.g. an inline SVG component), NOT a raw HTML string.
+   * This eliminates the dangerouslySetInnerHTML XSS risk that would arise from
+   * accepting arbitrary string markup.
+   */
+  icon?: ComponentType<{ class?: string }>;
 }
 
-export default function Dropdown({ items, selected, onSelect, buttonClass = "", panelClass = "", label, icon }: Props) {
+export default function Dropdown({ items, selected, onSelect, buttonClass = "", panelClass = "", label, icon: Icon }: Props) {
   const isOpen = useSignal(false);
   const focusedIndex = useSignal(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -114,9 +121,7 @@ export default function Dropdown({ items, selected, onSelect, buttonClass = "", 
         onClick={() => (isOpen.value ? close() : open())}
         onKeyDown={handleButtonKeyDown}
       >
-        {icon && (
-          <span class="w-4 h-4 flex-shrink-0" aria-hidden="true" dangerouslySetInnerHTML={{ __html: icon }} />
-        )}
+        {Icon && <Icon class="w-4 h-4 flex-shrink-0" aria-hidden="true" />}
         <span class={selectedItem?.colorClass}>{selectedItem?.label}</span>
         <svg class="w-4 h-4 text-pm-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <polyline points="6 9 12 15 18 9" />

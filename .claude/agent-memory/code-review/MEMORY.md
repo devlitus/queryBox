@@ -158,5 +158,18 @@ bun run test:coverage  # Coverage: verify thresholds
 - Test factories: `src/test/factories.ts`
 - Test setup: `src/test/setup.ts`
 
+## Security Fix Reviews
+
+### Security review patterns (first seen: ai-error-diagnosis, 2026-02-22)
+- Middleware `src/middleware.ts` is auto-discovered by Astro — no config in `astro.config.mjs` needed
+- When `dangerouslySetInnerHTML` is removed via ComponentType refactor, verify ALL callers are updated
+- Import ordering: senior-developer sometimes inserts new imports AFTER function declarations — always check
+- Arrays validated with `Array.isArray` only — structure of elements (key/value shape) often missed
+- `bun update` for dependency CVEs leaves no git diff; accept at face value if audit says it was run
+- Rate limiter `clientAddress` guard (reject 400 if undefined) is the correct fix for "unknown" bucket
+- CSP `connect-src 'self' https://api.groq.com` must be verified against ALL fetch/XHR calls in codebase
+- `URL.createObjectURL` for `<a download>` does NOT require blob: CSP directive — not a blocker
+- `console.error` leaking Groq.APIError objects is a BAJA; sanitized logging is `{ type, status }` only
+
 ## Detailed Review History
 See `review-history.md` for detailed learnings from each feature review.
