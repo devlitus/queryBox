@@ -132,6 +132,19 @@
 - Migration guard: tabs without auth field get DEFAULT_AUTH on restore
 - Plan: `docs/auth-system/auth-system-plan.md`
 
+### Code Snippet Generator (Phase 9) - PLANNED
+- Pure generator functions in src/utils/snippet-generators.ts (curl, fetch, python-requests, axios)
+- Types in src/types/snippet.ts (SnippetLanguage union, SNIPPET_OPTIONS registry)
+- Modal pattern (CodeSnippetModal.tsx) following SaveToCollectionModal pattern
+- Button "</> Code" in RequestBar between Save and Send
+- Signal showCodeSnippetModal in ui-store.ts
+- Reuses: Dropdown for language selector, CodeViewer pattern for preview
+- Reuses: resolveAuthHeaders(), buildUrlWithParams(), interpolateRequest()
+- Toggle to resolve/preserve env variable placeholders in snippets
+- navigator.clipboard.writeText() + "Copied!" feedback (2s timeout)
+- No external dependencies needed
+- Plan: `docs/code-snippet-generator/code-snippet-generator-plan.md`
+
 ### Vercel Deploy (Phase 8) - PLANNED
 - 100% static site, NO @astrojs/vercel adapter needed
 - No SSR, no middleware, no API routes, no env vars used

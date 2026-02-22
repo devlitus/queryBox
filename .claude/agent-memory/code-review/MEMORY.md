@@ -65,6 +65,17 @@
   in all 3 required places; VariableIndicator correctly conditioned to `activeEnvironmentId !== null`;
   auth header precedence (auth < user-defined) correctly implemented and commented; 100% coverage on auth.ts.
   Pattern: discriminated union + TextEncoder base64 is the established auth encoding approach in this codebase.
+- code-snippet-generator (2026-02-22): APPROVED on first review + APPROVED on re-review after 3 BAJA fixes.
+  338 tests pass, build succeeds, 0 TS errors across both reviews.
+  Fix patterns applied correctly: (1) moved `snippet` const before handleCopy (now above early return —
+  snippet calculates even when modal closed, but pure fn so no impact); (2) added escapeTemplateLiteral()
+  with correct order: backslashes first, then backticks, then `${` — applied in fetch+axios non-JSON branch;
+  (3) buildFinalUrl+buildHeaders refactored to accept ResolvedAuth param, each generator calls
+  resolveAuthHeaders exactly once. No regressions introduced. No new tests for escapeTemplateLiteral
+  (BAJA fix, no tests required). Python generator uses authResolved.headers directly (no buildHeaders call)
+  — this is intentional due to special basic auth handling, not a gap.
+  Pattern: when moving code before an early return to fix ordering issues, verify whether the moved code
+  now executes on every render regardless of condition — acceptable for pure/cheap computations.
 
 ## Optimized Review Checklist
 
