@@ -177,3 +177,60 @@
 - `/api/diagnose` endpoint: reads body as stream with 64KB hard limit (H-3), validates `method` as enum of VALID_HTTP_METHODS (M-4), checks Content-Length fast path
 - clientAddress fallback `|| "unknown"` replaced with explicit 400 response if `clientAddress` is falsy (M-1)
 - rate-limiter.ts: documented in-memory limitations (no persistence on restart, no multi-instance support) with TODO comment (M-2)
+
+## Server Proxy for CORS Bypass (added feature/server-proxy)
+
+**Purpose**: Eliminate CORS restrictions by routing all external API requests through a server-side proxy.
+
+### Architecture
+- Browser → `/api/proxy` (same origin, no CORS) → Astro Server → External API (server-to-server, no CORS)
+- The proxy ALWAYS returns 200 when the external API responds (even if API returns 4xx/5xx)
+- Only errors from the proxy itself use HTTP error codes: 429, 504, 502, 403, 413, 400, 500
+
+### Key Files
+- `src/pages/api/proxy.ts` — Main proxy endpoint (POST only, prerender = false)
+- `src/types/proxy.ts` — `ProxyRequest`, `ProxySuccessResponse`, `ProxyErrorResponse`
+- `src/server/proxy-validation.ts` — SSRF prevention + header sanitization
+- `src/services/http-client.ts` — Modified to send all requests through proxy
+
+### Rate Limiter Refactor (Phase 1)
+- Changed from singleton to factory pattern: `createRateLimiter(config): RateLimiterInstance`
+- Pre-constructed instances: `aiRateLimiter` (10 req/60s), `proxyRateLimiter` (100 req/60s)
+- Each instance returns `{ checkRateLimit, reset }` — no global state pollution
+- `/api/diagnose` uses `aiRateLimiter.checkRateLimit()` instead of global `checkRateLimit()`
+
+### SSRF Prevention
+```typescript
+isAllowedUrl(url, isDev: boolean)
+```
+- **Production** (`isDev=false`): Blocks localhost, 127.x.x.x, 10.x.x.x, 192.168.x.x, 172.16-31.x.x, ::1, fe80::, fc::, file://, ftp://
+- **Development** (`isDev=true`): Allows localhost and private IPs (enables testing against local APIs), still blocks non-HTTP protocols
+- IPv6 with brackets: URL.hostname returns `[::1]` — must strip brackets before validation
+- URL constructor validates format but NOT IP octets — `300.300.300.300` rejected as "Invalid URL format"
+
+### Header Sanitization
+Blocks: `Host`, `Connection`, `Keep-Alive`, `Transfer-Encoding`, `Upgrade`, `TE`, `Trailer`, `Proxy-*`  
+Reason: These are connection-management headers that should not be forwarded to external APIs.
+
+### CSP Simplification (Phase 5)
+- Before: `connect-src 'self' https://api.groq.com`
+- After: `connect-src 'self'`
+- All client fetch calls now go to `/api/proxy` or `/api/diagnose` (both are 'self')
+- No need to whitelist external domains — proxy handles them server-side
+
+### HttpError Type Extension
+Added `"rate-limit"` and `"forbidden"` to `HttpError.type` union:
+```typescript
+type: "network" | "cors" | "timeout" | "abort" | "unknown" | "rate-limit" | "forbidden"
+```
+
+### Testing Gotchas
+- **Mocking API Context**: Must create ReadableStream for `request.body` manually
+- **Mocking fetch with AbortSignal**: Use addEventListener("abort") in mock implementation
+- **IPv6 tests**: URL.hostname includes brackets, must strip before comparing
+- **Test timeouts**: AbortController tests need sufficient timeout (5000ms+)
+
+### Pending Future Work
+- Streaming large responses (currently truncates at 5 MB)
+- Redis-based rate limiter for horizontal scaling
+- DNS resolution to block hostnames that resolve to private IPs (currently only blocks IP literals)

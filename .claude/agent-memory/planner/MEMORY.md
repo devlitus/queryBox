@@ -157,16 +157,25 @@
 - No external dependencies needed
 - Plan: `docs/code-snippet-generator/code-snippet-generator-plan.md`
 
-### Vercel Deploy (Phase 8) - PLANNED
-- 100% static site, NO @astrojs/vercel adapter needed
-- No SSR, no middleware, no API routes, no env vars used
-- Single page: src/pages/index.astro -> dist/index.html
-- vercel.json: explicit framework/buildCommand/installCommand + security headers
-- Cache-Control immutable for _astro/ assets (content-hashed filenames)
-- Bun detected via bun.lockb automatically by Vercel
-- site property in astro.config.mjs to be added post-deploy
-- Future CORS proxy would require adapter + output:'hybrid'
+### Vercel Deploy (Phase 8) - DEPLOYED
+- @astrojs/vercel adapter now installed and configured (required for SSR API routes)
+- astro.config.mjs: `adapter: vercel()` (no output mode specified = hybrid)
+- API routes use `export const prerender = false` to opt out of static generation
+- Middleware in src/middleware.ts applies security headers to all responses
 - Plan: `docs/vercel-deploy/vercel-deploy-plan.md`
+
+### Server Proxy (Phase 11) - PLANNED
+- API route /api/proxy for server-side HTTP proxying to bypass CORS
+- ProxyRequest JSON payload: url, method, headers, body, timeout
+- ProxySuccessResponse wraps external API response (always HTTP 200 from proxy)
+- Rate limiter refactored to factory: createRateLimiter() + aiRateLimiter instance
+- Separate proxyRateLimiter: PROXY_RATE_LIMIT_MAX=100/60s (vs AI 10/60s)
+- SSRF protection: block localhost, private IPs, non-HTTP protocols
+- Header sanitization: strip Host, Connection, Proxy-* etc.
+- CSP connect-src simplifies to 'self' only (remove api.groq.com exception)
+- http-client.ts sends POST /api/proxy instead of direct fetch
+- Code snippets unaffected (use original URL, not proxy)
+- Plan: `docs/server-proxy/server-proxy-plan.md`
 
 ## Skills Available
 - `ui-design-system`: TailwindCSS + Radix + shadcn/ui patterns

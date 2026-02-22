@@ -225,7 +225,7 @@ DOM via `dangerouslySetInnerHTML`:
 
 ```tsx
 // Dropdown.tsx:118 — VULNERABLE
-<span class="w-4 h-4 flex-shrink-0" aria-hidden="true" dangerouslySetInnerHTML={{ __html: icon }} />
+<span class="w-4 h-4 shrink-0" aria-hidden="true" dangerouslySetInnerHTML={{ __html: icon }} />
 ```
 
 La prop `icon` es de tipo `string` sin ninguna validacion ni sanitizacion. Si el contenido de
@@ -267,7 +267,7 @@ interface Props {
 }
 
 // En el render:
-{icon && <Icon class="w-4 h-4 flex-shrink-0" aria-hidden="true" />}
+{icon && <Icon class="w-4 h-4 shrink-0" aria-hidden="true" />}
 ```
 
 Opcion B — Si se necesita mantener el SVG como string, validar que proviene exclusivamente de

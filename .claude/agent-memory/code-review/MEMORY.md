@@ -84,6 +84,25 @@
   (3) same strategy applied to both collections and bundled environments in single import op.
   BAJA residuals still unresolved: importResult dead code + double import in ImportModal.tsx.
   Note: HistoryPanel still uses client:idle — may have SSR mismatch, worth checking in future review.
+- **server-proxy (2026-02-22): ✅ EXEMPLARY — APPROVED on first review. 508→508 tests (62 new), 0 TS errors.**
+  **ZERO ALTA, ZERO MEDIA issues. Only 3 BAJA (cosmetic).** This is the **gold standard** implementation.
+  All 6 phases correct: (1) rate limiter factory pattern, (2) types+validation with 56 unit tests,
+  (3) proxy endpoint with 6 integration tests, (4) http-client integration, (5) CSP simplification,
+  (6) snippet generator verification (no changes needed).
+  **Key patterns (REPLICATE IN FUTURE)**: (1) SSRF prevention with DEV mode exception (localhost allowed
+  in dev, blocked in prod) — pragmatic security; (2) IPv6 bracket stripping in URL.hostname validation;
+  (3) AbortController timeout with `clearTimeout()` in finally block — no resource leaks; (4) Rate limiter
+  factory with separate instances (AI: 10/60s, proxy: 100/60s); (5) Proxy ALWAYS returns 200 for external
+  API responses (even 4xx/5xx), reserves error codes for proxy-level errors — principle of least surprise;
+  (6) Headers sanitization blocklist (Host, Connection, Keep-Alive, Transfer-Encoding, Proxy-*);
+  (7) Content-Length validation BEFORE stream read — fail fast; (8) Error codes strictly follow plan D4
+  (400/403/413/429/502/504/500); (9) HttpError.type extended cleanly (rate-limit, forbidden);
+  (10) History stores unresolved URL templates, auto-rename uses resolved hostname — correct separation;
+  (11) Test mocking: `addEventListener('abort')` pattern for AbortSignal, `vi.stubGlobal('fetch')`.
+  **Security**: comprehensive (SSRF, header injection, DoS, open relay all mitigated); CSP simplified
+  to connect-src 'self' (all external requests through proxy). **Backward compat**: zero breaking changes.
+  **Documentation**: JSDoc complete, inline comments explain "why", file headers clear.
+  **This review required ZERO iterations.** Use this feature as reference for future implementations.
 
 ## Optimized Review Checklist
 

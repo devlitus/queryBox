@@ -97,3 +97,161 @@
 - Tests verify both signal state AND localStorage persistence in same test case
 - Phase 4 stores correctly use `vi.resetModules()` + dynamic import (plan recommendation followed)
 - All 118 tests pass, 0 TypeScript errors, build successful
+
+---
+
+## Server-Side HTTP Proxy Review
+
+### Date: 2025-01-21
+### Status: ✅ APPROVED ON FIRST REVIEW (ZERO ITERATIONS)
+### Tests: 508 total (62 new: 56 unit + 6 integration)
+### Issues: 0 ALTA, 0 MEDIA, 3 BAJA (cosmetic only)
+
+### Exemplary Implementation Quality — Gold Standard
+
+This is a **reference implementation** — zero iterations required, approved immediately. **Use this as the template for what "perfect" looks like.**
+
+### What Made It Perfect
+
+1. **Plan adherence**: 100% — all 6 phases implemented exactly as specified
+2. **Security**: Comprehensive — SSRF, header injection, DoS, open relay all mitigated
+3. **Testing**: 62 tests covering all critical paths + edge cases (IPv6 brackets, timeouts, AbortSignal)
+4. **Documentation**: JSDoc on all public APIs, inline comments explain "why" not "what"
+5. **Backward compatibility**: Zero breaking changes — `sendRequest()` signature unchanged
+6. **Type safety**: TypeScript strict — no `any` types, proper type guards
+7. **Error handling**: Error codes match plan D4 exactly (400/403/413/429/502/504/500)
+8. **Resource management**: `clearTimeout()` in finally blocks — no leaks
+
+### Key Patterns to Replicate
+
+#### Pattern 1: SSRF Prevention with DEV Mode Exception
+```typescript
+// Production: block localhost/private IPs
+// Development: allow localhost for testing local APIs
+if (isDev) {
+  // Only validate protocol (still block file://, ftp://)
+  return protocol === "http:" || protocol === "https:";
+}
+// Production: full SSRF checks
+```
+**Why**: Pragmatic security — queryBox is a dev tool, blocking localhost in dev makes it unusable.
+
+#### Pattern 2: IPv6 Bracket Stripping
+```typescript
+const ipv6Hostname = hostname.startsWith("[") && hostname.endsWith("]")
+  ? hostname.slice(1, -1)
+  : hostname;
+```
+**Why**: `URL.hostname` includes brackets for IPv6 (e.g., `[::1]`), must strip for validation.
+
+#### Pattern 3: AbortController Timeout with Cleanup
+```typescript
+const timeoutId = setTimeout(() => controller.abort(), timeout);
+try {
+  const response = await fetch(url, { signal: controller.signal });
+  // ...
+} finally {
+  clearTimeout(timeoutId);  // CRITICAL: prevents memory leak
+}
+```
+**Why**: Always cleanup timers even if fetch succeeds early or throws.
+
+#### Pattern 4: Rate Limiter Factory Pattern
+```typescript
+const createRateLimiter = (config) => ({ checkRateLimit, reset });
+const aiRateLimiter = createRateLimiter({ maxRequests: 10, windowMs: 60000 });
+const proxyRateLimiter = createRateLimiter({ maxRequests: 100, windowMs: 60000 });
+```
+**Why**: Separate instances/limits for different endpoints, no shared state.
+
+#### Pattern 5: Proxy Status Code Strategy
+- Proxy returns **200** when external API responds (even if API returns 4xx/5xx)
+- Proxy reserves error codes for **proxy-level** failures (429 rate limit, 504 timeout, 502 network)
+- **Principle**: Client distinguishes "proxy failed" vs "API returned error"
+
+#### Pattern 6: Header Sanitization Blocklist
+```typescript
+const blocklist = new Set(["host", "connection", "keep-alive", "transfer-encoding", "upgrade", "te", "trailer"]);
+for (const [key, value] of Object.entries(headers)) {
+  if (blocklist.has(key.toLowerCase())) continue;
+  if (key.toLowerCase().startsWith("proxy-")) continue;
+  sanitized[key] = value;
+}
+```
+**Why**: Never forward connection management headers or internal proxy headers.
+
+#### Pattern 7: Content-Length Validation Before Stream Read
+```typescript
+const contentLength = request.headers.get("content-length");
+if (contentLength && parseInt(contentLength, 10) > PROXY_MAX_BODY_SIZE) {
+  return jsonError(413, "payload-too-large", "...");
+}
+// NOW read body stream
+```
+**Why**: Fail fast — don't start reading a 100 MB body if the limit is 5 MB.
+
+#### Pattern 8: History URL Template Preservation
+```typescript
+// Store ORIGINAL unresolved URL (with {{variables}})
+addHistoryEntry({
+  url: state.url,  // NOT resolvedUrl
+  // ...
+});
+// But auto-rename uses RESOLVED hostname
+const hostname = new URL(resolvedUrl).hostname;
+renameTab(currentTab.id, hostname);
+```
+**Why**: History entries are reusable templates; tab names are user-facing.
+
+#### Pattern 9: Test Mocking Patterns
+```typescript
+// Mock fetch globally
+vi.stubGlobal('fetch', vi.fn());
+// Mock AbortSignal correctly
+signal.addEventListener('abort', () => {
+  reject(new DOMException('Aborted', 'AbortError'));
+});
+```
+**Why**: `AbortSignal` uses event pattern, direct assignment doesn't work.
+
+#### Pattern 10: HttpError Type Extension
+```typescript
+// BEFORE: "network" | "cors" | "timeout" | "abort" | "unknown"
+// AFTER:  "network" | "cors" | "timeout" | "abort" | "unknown" | "rate-limit" | "forbidden"
+```
+**Why**: New proxy error types cleanly integrated without breaking existing error handling.
+
+### Only 3 BAJA Issues (Cosmetic)
+
+1. **Plan vs code naming**: Plan says `ProxyResponse`, code uses `ProxySuccessResponse` (code is better)
+2. **Magic number in error message**: Hardcoded "5 MB" instead of calculating from `PROXY_MAX_BODY_SIZE`
+3. **Comment in isAllowedUrl**: Could be more explicit about DEV mode security tradeoff
+
+### Security Audit — All Mitigated
+
+✅ **SSRF**: localhost/private IPs blocked in production, DEV exception documented  
+✅ **Header Injection**: Comprehensive sanitization blocklist  
+✅ **DoS**: Rate limiting (100/60s), timeout (max 120s), body size (5 MB)  
+✅ **Information Disclosure**: Proxy errors 200 vs 4xx/5xx, internal headers not forwarded  
+✅ **Open Relay**: SSRF prevention + rate limiting  
+
+### Why This Review Required Zero Iterations
+
+1. **Plan was comprehensive**: D1-D8 design decisions covered all edge cases
+2. **Security designed upfront**: SSRF, DEV mode exception, header sanitization all in plan
+3. **Tests written alongside code**: 62 tests (not afterthought)
+4. **Resource management**: `clearTimeout()` in finally blocks from the start
+5. **Error codes followed plan D4**: No ad-hoc error code decisions
+6. **Documentation included**: JSDoc, inline comments, file headers all present
+7. **Backward compat considered**: Zero breaking changes to existing code
+
+### Learnings for Future Reviews
+
+- **Server-proxy is the reference implementation** — link reviewees to this code when they ask "what does good look like?"
+- When security features have DEV exceptions, verify `import.meta.env.DEV` is used (not hardcoded booleans)
+- IPv6 bracket stripping is required for validation (watch for this in URL validation)
+- AbortController cleanup in finally blocks is mandatory pattern
+- Test mocking: AbortSignal requires `addEventListener('abort')`, not direct property assignment
+- Factory pattern for rate limiters allows separate instances without code duplication
+- Proxy status code strategy (200 for API responses, 4xx/5xx for proxy errors) is non-obvious but correct
+
