@@ -3,7 +3,7 @@ import MethodSelector from "./MethodSelector";
 import { requestState, requestStatus } from "../../stores/http-store";
 import { updateUrl } from "../../stores/http-store";
 import { sendRequest, cancelRequest } from "../../services/http-client";
-import { showSaveModal, shouldFocusUrl } from "../../stores/ui-store";
+import { showSaveModal, showCodeSnippetModal, shouldFocusUrl } from "../../stores/ui-store";
 import { activeVariablesMap, activeEnvironmentId } from "../../stores/environment-store";
 import { hasVariables } from "../../utils/interpolation";
 import VariableIndicator from "../shared/VariableIndicator";
@@ -66,6 +66,27 @@ export default function RequestBar() {
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
           </svg>
           <span class="hidden md:inline">Save</span>
+        </button>
+
+        {/* Generate code snippet button */}
+        <button
+          type="button"
+          disabled={!url}
+          class={`inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded transition-colors ${
+            url
+              ? "text-pm-text-secondary hover:text-pm-text-primary hover:bg-pm-bg-elevated"
+              : "text-pm-text-tertiary cursor-not-allowed opacity-50"
+          }`}
+          aria-label="Generate code snippet"
+          title="Generate code snippet"
+          onClick={() => { showCodeSnippetModal.value = true; }}
+        >
+          {/* Code / </> icon */}
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <polyline points="16 18 22 12 16 6" />
+            <polyline points="8 6 2 12 8 18" />
+          </svg>
+          <span class="hidden md:inline">Code</span>
         </button>
 
         {isLoading && (

@@ -128,3 +128,18 @@
 - `http-client.ts`: `resolveAuthHeaders()` called after interpolation; auth headers added BEFORE user headers (user headers take precedence); API Key query params injected into URL via `searchParams.set()`
 - `makeRequestState()` factory now includes `auth: DEFAULT_AUTH`; new `makeAuthConfig()` factory in `src/test/factories.ts`
 - Cast pattern for testing legacy snapshots without auth field: `legacyObj as unknown as RequestState`
+
+## Code Snippet Generator (added feature/code-snippet-generator)
+
+- Types: `src/types/snippet.ts` — `SnippetLanguage` union, `SnippetOption` interface, `SNIPPET_OPTIONS` readonly array
+- Generators: `src/utils/snippet-generators.ts` — `generateCurl`, `generateJavaScriptFetch`, `generatePythonRequests`, `generateNodeAxios`, `generateSnippet` (dispatcher)
+- UI signal: `showCodeSnippetModal` in `src/stores/ui-store.ts` (same pattern as `showSaveModal`)
+- Modal: `src/components/workbench/CodeSnippetModal.tsx` — follows SaveToCollectionModal pattern (overlay, focus restore, Escape to close)
+- Button: in `RequestBar.tsx` between Save and Send/Cancel group; disabled when URL is empty
+- Python basic auth uses `auth=('user', 'pass')` tuple (NOT Authorization header) — unique Python pattern
+- URL normalization: `buildUrlWithParams` adds trailing slash to root-level URLs (`https://api.example.com` → `https://api.example.com/`) — test with `toContain` not exact match
+- Test pattern: `toContain()` for partial string assertions, avoid `toBe()` for full snippet strings (fragile)
+- `interpolateVars` toggle only shown when `activeEnvironmentId.value !== null` (same guard as VariableIndicator)
+- `buildFinalUrl` and `buildHeaders` accept `ResolvedAuth` as second param — each generator calls `resolveAuthHeaders` once and passes result to both helpers (avoids double call)
+- `escapeTemplateLiteral(str)` helper in snippet-generators.ts: escapes `\`, backticks, and `${` for safe embedding in JS template literals
+- `snippet` and `processedRequest` in CodeSnippetModal are declared BEFORE `handleCopy` (not after the early return) to avoid TDZ reference errors

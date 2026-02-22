@@ -4,6 +4,9 @@ import { signal } from "@preact/signals";
 
 export const showSaveModal = signal<boolean>(false);
 
+/** Controls visibility of the Code Snippet Generator modal. */
+export const showCodeSnippetModal = signal<boolean>(false);
+
 /**
  * When set to true, RequestBar will focus the URL input.
  * Reset to false immediately after focusing to allow repeated triggers.
