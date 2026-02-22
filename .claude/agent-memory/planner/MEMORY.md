@@ -119,7 +119,7 @@
 - MethodBadge.tsx: colored method label for sidebar items
 - CodeViewer.tsx: JSON syntax highlighting for response body
 
-### Authentication System (Phase 7) - PLANNED
+### Authentication System (Phase 7) - COMPLETED
 - Auth as field of RequestState (not separate store) -- same pattern as body
 - Discriminated union AuthConfig: none | basic | bearer | apikey
 - Types: src/types/auth.ts, utils: src/utils/auth.ts (resolveAuthHeaders pure fn)
@@ -131,6 +131,17 @@
 - interpolateRequest() extended to interpolate auth fields
 - Migration guard: tabs without auth field get DEFAULT_AUTH on restore
 - Plan: `docs/auth-system/auth-system-plan.md`
+
+### Vercel Deploy (Phase 8) - PLANNED
+- 100% static site, NO @astrojs/vercel adapter needed
+- No SSR, no middleware, no API routes, no env vars used
+- Single page: src/pages/index.astro -> dist/index.html
+- vercel.json: explicit framework/buildCommand/installCommand + security headers
+- Cache-Control immutable for _astro/ assets (content-hashed filenames)
+- Bun detected via bun.lockb automatically by Vercel
+- site property in astro.config.mjs to be added post-deploy
+- Future CORS proxy would require adapter + output:'hybrid'
+- Plan: `docs/vercel-deploy/vercel-deploy-plan.md`
 
 ## Skills Available
 - `ui-design-system`: TailwindCSS + Radix + shadcn/ui patterns
