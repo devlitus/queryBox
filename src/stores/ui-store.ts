@@ -13,3 +13,18 @@ export const showCodeSnippetModal = signal<boolean>(false);
  * Set by tab-store when a new tab is created.
  */
 export const shouldFocusUrl = signal<boolean>(false);
+
+// ---------------------------------------------------------------------------
+// Import modal state
+// ---------------------------------------------------------------------------
+
+export type ImportModalState = {
+  target: "collections" | "environments";
+};
+
+/**
+ * Controls visibility of the Import modal.
+ * When null, the modal is closed.
+ * When set, indicates which type of data is being imported.
+ */
+export const showImportModal = signal<ImportModalState | null>(null);

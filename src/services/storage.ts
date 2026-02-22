@@ -73,7 +73,7 @@ function isHistoryEntry(value: unknown): value is HistoryEntry {
   );
 }
 
-function isCollection(value: unknown): value is Collection {
+export function isCollection(value: unknown): value is Collection {
   if (typeof value !== "object" || value === null) return false;
   const v = value as Record<string, unknown>;
   return (
@@ -105,7 +105,7 @@ function isEnvironmentVariable(value: unknown): value is EnvironmentVariable {
   );
 }
 
-function isEnvironment(value: unknown): value is Environment {
+export function isEnvironment(value: unknown): value is Environment {
   if (typeof value !== "object" || value === null) return false;
   const v = value as Record<string, unknown>;
   return (

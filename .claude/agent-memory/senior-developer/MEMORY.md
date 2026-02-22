@@ -143,3 +143,25 @@
 - `buildFinalUrl` and `buildHeaders` accept `ResolvedAuth` as second param — each generator calls `resolveAuthHeaders` once and passes result to both helpers (avoids double call)
 - `escapeTemplateLiteral(str)` helper in snippet-generators.ts: escapes `\`, backticks, and `${` for safe embedding in JS template literals
 - `snippet` and `processedRequest` in CodeSnippetModal are declared BEFORE `handleCopy` (not after the early return) to avoid TDZ reference errors
+
+## Collections Import/Export (added feature/collections-import-export)
+
+- Types: `src/types/export.ts` — `ExportEnvelope<T>`, `CollectionExport`, `EnvironmentExport`, `ExportFile`, `ImportStrategy`
+- Utilities: `src/utils/export-import.ts` — `exportCollections`, `exportEnvironments`, `downloadJson`, `parseImportFile`, `readFileAsText`
+- `isCollection` and `isEnvironment` exported from `src/services/storage.ts` as named exports (previously private)
+- Store functions: `importCollections(imported, strategy)` in collection-store, `importEnvironments(imported, strategy)` in environment-store
+- Both import functions regenerate ALL IDs (collection/env + nested requests/variables) via `crypto.randomUUID()` — prevents conflicts regardless of strategy
+- `importEnvironments` replace strategy resets `activeEnvironmentId` to null if the active env is removed
+- Merge strategy uses case-insensitive name comparison — deduplicates across existing AND within the imported array itself (Set tracks names as we iterate)
+- UI signal: `showImportModal: Signal<ImportModalState | null>` and `ImportModalState = { target: "collections" | "environments" }` in ui-store.ts
+- `ImportModal.tsx` at `src/components/shared/ImportModal.tsx` — single reusable modal parametrized by `target`
+- Cross-type validation: if file.type !== target, shows error "This file contains X, but you are importing Y"
+- Modal state resets on open (useEffect watching `isOpen`) — selectedFile, parseResult, parseError, strategy all reset
+- File parsing runs immediately on file selection (async `readFileAsText` + `parseImportFile`)
+- Tests for import utilities: `src/utils/__tests__/export-import.test.ts` (28 tests — includes DOM-based tests for `downloadJson` and `readFileAsText`)
+- Tests for store imports: `src/stores/__tests__/collection-store-import.test.ts` (15 tests), `src/stores/__tests__/environment-store-import.test.ts` (18 tests)
+- DOM API mocking in Vitest (happy-dom): `URL.createObjectURL`/`revokeObjectURL` → `vi.spyOn(URL, ...)`. `FileReader` error simulation → must use `class` syntax (NOT `vi.fn()`) so it can be called with `new`
+- `vi.fn().mockImplementation(arrow)` cannot be used with `new` — Vitest warns and it fails. Use `class MockName { ... }` for constructors
+- Test files in `__tests__/` subdirectories work fine — vitest config uses `src/**/*.{test,spec}.{ts,tsx}`
+- Buttons in panel headers use `gap-0.5` between them; Export button has `disabled` + `opacity-50` when no data
+- ImportModal mounted inside each panel with conditional: `{showImportModal.value?.target === "collections" && <ImportModal />}`

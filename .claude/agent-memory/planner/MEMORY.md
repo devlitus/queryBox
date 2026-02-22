@@ -132,7 +132,19 @@
 - Migration guard: tabs without auth field get DEFAULT_AUTH on restore
 - Plan: `docs/auth-system/auth-system-plan.md`
 
-### Code Snippet Generator (Phase 9) - PLANNED
+### Collections Import/Export (Phase 10) - PLANNED
+- Export: downloadJson() with Blob + Object URL + temp <a> click pattern
+- Import: ImportModal.tsx (shared for collections & environments) with file input + parse + strategy
+- Format: ExportEnvelope with format="querybox", version=1, type, data fields
+- Strategies: merge (skip by name case-insensitive) | replace (regenerate all IDs)
+- Type guards isCollection/isEnvironment exported from storage.ts for validation
+- UI: Import/Export icon buttons in CollectionPanel + EnvironmentPanel headers
+- Signal: showImportModal in ui-store.ts with { target: "collections"|"environments" }
+- No external dependencies, no toast system (relies on signal reactivity for feedback)
+- Postman v2.1 compatibility deferred to future phase (YAGNI)
+- Plan: `docs/collections-import-export/collections-import-export-plan.md`
+
+### Code Snippet Generator (Phase 9) - COMPLETED
 - Pure generator functions in src/utils/snippet-generators.ts (curl, fetch, python-requests, axios)
 - Types in src/types/snippet.ts (SnippetLanguage union, SNIPPET_OPTIONS registry)
 - Modal pattern (CodeSnippetModal.tsx) following SaveToCollectionModal pattern
