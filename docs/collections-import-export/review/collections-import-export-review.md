@@ -325,3 +325,280 @@ Ningun issue de severidad MEDIA encontrado.
 Ambos fixes son correctos y bien implementados. Fix 1 resuelve el problema de compatibilidad cross-browser en `downloadJson` con el patron DOM estandar y lo cubre con tests exhaustivos. Fix 2 resuelve la causa raiz del bug de Export button siempre disabled usando la directiva Astro semanticamente correcta para componentes que dependen de APIs del browser. No se introdujeron regresiones. Los issues BAJA residuales del Review #1 (dead code en `importResult`, doble import en `ImportModal.tsx`) siguen presentes pero no bloquean la aprobacion.
 
 **APROBADO** — Los fixes son correctos. La implementacion puede ser mergeada a main.
+
+---
+
+## Review #3 - 2026-02-22
+
+## Feature: Collections Import/Export — Bundling de Environments + Nuevo Comportamiento de Importacion
+## Plan: `docs/collections-import-export/collections-import-export-plan.md`
+## Date: 2026-02-22
+## Status: APROBADO
+
+---
+
+### Summary
+
+Se revisaron los cambios implementados post-Review #2, que extienden la feature con:
+
+1. **Bundling de environments en el export de colecciones**: `ExportEnvelope` recibe el campo opcional `environments?: Environment[]`. `exportCollections` acepta un segundo parametro `environments: Environment[] = []` y lo incluye en el JSON solo si el array no esta vacio. `parseImportFile` valida y parsea dicho campo cuando `type === "collections"`.
+
+2. **Nuevo comportamiento de importacion en `ImportModal`**: La validacion cruzada estricta (que rechazaba cualquier archivo cuyo `type` no coincidiera con el `target` del panel) fue reemplazada por una logica mas flexible, alineada con la especificacion definitiva del plan (Phase 3, seccion "Comportamiento al importar segun tipo de archivo").
+
+Las verificaciones de compilacion y tests pasaron sin errores:
+
+- `bun astro check`: 0 errores en archivos del proyecto (el unico warning es `coverage/prettify.js`, archivo de dependencia externo no gestionado por el proyecto)
+- `bun run build`: exitoso (1 pagina, todos los modulos JS construidos)
+- `bun run test`: 407 tests pasando en 13 archivos (+6 tests vs. los 401 del Review #2)
+- `bun run test:coverage`: todos los umbrales globales superados; `export-import.ts` mantiene 98% statements
+
+No se encontraron issues ALTA ni MEDIA. Se identificaron 2 issues BAJA residuales del Review #1 (no abordados en ningun round previo) y 0 issues BAJA nuevos.
+
+---
+
+### Cambios Revisados
+
+#### Cambio 1: `src/types/export.ts` — Campo `environments?` en `ExportEnvelope`
+
+**Antes (Review #2):**
+```typescript
+export interface ExportEnvelope<T extends "collections" | "environments"> {
+  format: "querybox";
+  version: 1;
+  exportedAt: number;
+  type: T;
+  data: T extends "collections" ? Collection[] : Environment[];
+}
+```
+
+**Despues (este round):**
+```typescript
+export interface ExportEnvelope<T extends "collections" | "environments"> {
+  format: "querybox";
+  version: 1;
+  exportedAt: number;
+  type: T;
+  data: T extends "collections" ? Collection[] : Environment[];
+  /** Environments bundled with a collections export (optional). */
+  environments?: Environment[];
+}
+```
+
+**Evaluacion:** Correcto. El campo `environments?` es opcional en la interfaz generica, lo que significa que aplica a ambos tipos (`"collections"` y `"environments"`). En la practica, el campo solo es semanticamente relevante para `CollectionExport` (alias de `ExportEnvelope<"collections">`), pero al ser opcional en la interfaz, no rompe `EnvironmentExport`. La documentacion JSDoc explica el proposito. La decision de mantenerlo en la interfaz generica (en lugar de solo en `CollectionExport`) es pragmatica y aceptable — evita duplicacion de interfaz.
+
+Un detalle sutil: TypeScript permite que `EnvironmentExport` incluya `environments` en runtime si alguien lo asignara explicitamente, pero las funciones de negocio (`exportEnvironments`, `parseImportFile`) nunca lo producen para archivos de type `"environments"`. El riesgo de confusion es bajo.
+
+#### Cambio 2: `src/utils/export-import.ts` — `exportCollections` y `parseImportFile`
+
+**`exportCollections` — firma y logica:**
+```typescript
+export function exportCollections(
+  collections: Collection[],
+  environments: Environment[] = []
+): CollectionExport {
+  const envelope: CollectionExport = {
+    format: "querybox",
+    version: 1,
+    exportedAt: Date.now(),
+    type: "collections",
+    data: collections,
+  };
+  if (environments.length > 0) {
+    envelope.environments = environments;
+  }
+  return envelope;
+}
+```
+
+**Evaluacion:** Correcto. La firma con parametro opcional (`environments: Environment[] = []`) es idiomatica en TypeScript. La condicion `if (environments.length > 0)` es la forma correcta de omitir el campo cuando no hay environments, evitando `environments: []` en el JSON exportado (que seria ruido innecesario). El comportamiento coincide exactamente con el plan.
+
+**`parseImportFile` — parseo del campo `environments`:**
+```typescript
+const rawEnvs = Array.isArray(obj["environments"]) ? (obj["environments"] as unknown[]) : [];
+const validEnvs = rawEnvs.filter(isEnvironment);
+// ...
+if (validEnvs.length > 0) {
+  result.environments = validEnvs;
+}
+```
+
+**Evaluacion:** Correcto. El parseo es defensivo: si el campo no es array (o no existe), se usa `[]` en lugar de lanzar error. Items invalidos se filtran silenciosamente (comportamiento permisivo del plan). Solo se asigna `result.environments` si hay al menos un environment valido, manteniendo la semantica de "omitir si vacio".
+
+#### Cambio 3: `src/components/sidebar/CollectionPanel.tsx` — Export con environments
+
+**Antes:**
+```tsx
+onClick={() => downloadJson(exportCollections(collections.value), "querybox-collections.json")}
+```
+
+**Despues:**
+```tsx
+onClick={() => downloadJson(exportCollections(collections.value, environments.value), "querybox-collections.json")}
+```
+
+**Evaluacion:** Correcto. La adicion de `environments.value` como segundo argumento pasa todos los environments activos al envelope. La importacion de `environments` desde `environment-store` ya estaba presente en el componente (linea 8: `import { environments } from "../../stores/environment-store"`). Sin embargo, revisando el archivo completo, la importacion de `environments` ya existia en el componente para poder leer el signal — el unico cambio es usarlo en el onClick del boton Export.
+
+#### Cambio 4: `src/components/shared/ImportModal.tsx` — Nueva logica de validacion cruzada
+
+**Antes (validacion estricta):**
+```tsx
+if (result.type !== modalState?.target) {
+  setParseError(`This file contains ${result.type}, but you are importing ${modalState?.target}.`);
+  setParseResult(null);
+  return;
+}
+```
+
+**Despues (validacion flexible):**
+```tsx
+if (result.type === "environments" && modalState?.target === "collections") {
+  setParseError(
+    "This file contains environments. Open Import from the Environments tab to import it."
+  );
+  setParseResult(null);
+  return;
+}
+```
+
+**Evaluacion:** Correcto. Solo se bloquea el caso `environments → panel Collections`. El caso `collections → panel Environments` se permite y procede normalmente. Esta logica implementa exactamente la especificacion del plan (Phase 3, seccion "Comportamiento al importar segun tipo de archivo").
+
+**`handleImport` — importacion de colecciones + environments bundleados:**
+```tsx
+function handleImport() {
+  if (!parseResult || !modalState) return;
+
+  if (parseResult.type === "collections") {
+    importCollections(parseResult.data, strategy);
+    if (parseResult.environments && parseResult.environments.length > 0) {
+      importEnvironments(parseResult.environments, strategy);
+    }
+  } else {
+    importEnvironments(parseResult.data, strategy);
+  }
+
+  close();
+}
+```
+
+**Evaluacion:** Correcto. Cuando el archivo es de colecciones, importa colecciones + environments bundleados (si los hay) en una sola operacion con la misma estrategia. Cuando el archivo es de environments (solo alcanzable desde el panel de Environments, porque el otro caso fue bloqueado), importa solo environments. La estrategia se aplica consistentemente a ambas llamadas.
+
+**`getCollectionsSummary` — resumen actualizado:**
+```tsx
+function getCollectionsSummary(data: Collection[], envs?: Environment[]): string {
+  const totalRequests = data.reduce((sum, c) => sum + c.requests.length, 0);
+  let text = `Found ${data.length} collection${data.length !== 1 ? "s" : ""} with ${totalRequests} total request${totalRequests !== 1 ? "s" : ""}.`;
+  if (envs && envs.length > 0) {
+    text += ` Includes ${envs.length} environment${envs.length !== 1 ? "s" : ""}.`;
+  }
+  return text;
+}
+```
+
+**Evaluacion:** Correcto. La funcion ahora acepta el parametro opcional `envs?: Environment[]` y appends el texto "Includes N environment(s)" cuando corresponde. Esta firmicamente tipado y el formato de texto coincide con el criterio del plan ("Includes N environments").
+
+#### Cambio 5: `src/utils/__tests__/export-import.test.ts` — Tests nuevos
+
+Se agregaron 6 tests nuevos (401 → 407 total):
+
+**Tests en `exportCollections`:**
+- "includes environments when provided" — verifica que `result.environments` tiene los environments pasados
+- "omits environments field when none are provided" — verifica `result.environments` es `undefined` sin segundo parametro
+- "omits environments field when empty array is passed" — verifica `result.environments` es `undefined` con `[]`
+
+**Tests en `parseImportFile — valid collections`:**
+- "parses bundled environments when present" — verifica que `result.environments` contiene los environments del archivo
+- "ignores invalid items in bundled environments" — verifica el filtrado permisivo
+- "omits environments field when not present in file" — verifica que `result.environments` es `undefined` cuando el campo no existe en el JSON
+
+**Evaluacion:** Los 6 tests cubren exactamente los criterios del plan (Phase 1, lista de tests):
+- [x] Test que `exportCollections` incluye `environments` en el envelope cuando se pasan
+- [x] Test que `exportCollections` omite el campo `environments` cuando no se pasan o se pasa un array vacio
+- [x] Test que `parseImportFile` acepta un JSON valido de colecciones con environments bundleados
+- [x] Test que `parseImportFile` filtra items invalidos del array `environments` y retorna solo los validos
+- [x] Test que `parseImportFile` omite el campo `environments` cuando el archivo no lo trae
+
+---
+
+### Plan Compliance Checklist (cambios de este round)
+
+- [x] Campo `environments?: Environment[]` anadido a `ExportEnvelope` en `src/types/export.ts`
+- [x] `exportCollections` acepta `environments: Environment[] = []` como segundo parametro opcional
+- [x] `exportCollections` incluye `environments` en el JSON solo cuando el array no esta vacio
+- [x] `parseImportFile` parsea y valida el campo `environments` cuando `type === "collections"`
+- [x] Items invalidos en `environments` se descartan silenciosamente (comportamiento permisivo)
+- [x] `CollectionPanel.tsx` pasa `environments.value` a `exportCollections` en el onClick del Export
+- [x] Archivo de colecciones aceptado desde cualquier panel (nueva logica en `handleFileChange`)
+- [x] Archivo de environments rechazado desde panel Collections con mensaje claro
+- [x] `handleImport` importa colecciones + environments bundleados en una operacion
+- [x] Resumen del modal muestra "Includes N environment(s)" cuando hay environments bundleados
+- [x] Tests unitarios para `exportCollections` con environments (3 tests nuevos)
+- [x] Tests unitarios para `parseImportFile` con environments bundleados (3 tests nuevos)
+- [x] `bun run test` pasa al 100% (407 tests)
+- [x] `bun astro check` sin errores en archivos del proyecto
+- [x] `bun run build` exitoso
+
+---
+
+### Issues del Review #1 y #2 — Estado
+
+| Issue | Severidad | Estado |
+|---|---|---|
+| BAJA #1 (R1): `importResult` dead code en ImportModal.tsx | BAJA | No abordado — sigue sin renderizarse (no bloquea aprobacion) |
+| BAJA #2 (R1): Cobertura baja en `downloadJson`/`readFileAsText` | BAJA | RESUELTO en Review #2 |
+| BAJA #3 (R1): Doble import desde `../../types/export` en ImportModal.tsx | BAJA | No abordado — sigue siendo doble import (no bloquea aprobacion) |
+| BAJA #1 (R2): `HistoryPanel` potencialmente afectado por SSR mismatch | BAJA | No abordado — fuera de scope de esta feature |
+
+---
+
+### Issues Encontrados en este Review
+
+#### ALTA (0 issues)
+
+Ningun issue de severidad ALTA encontrado.
+
+#### MEDIA (0 issues)
+
+Ningun issue de severidad MEDIA encontrado.
+
+#### BAJA (0 issues nuevos)
+
+No se identificaron issues BAJA nuevos en este round de cambios.
+
+Los 2 issues BAJA residuales del Review #1 (`importResult` dead code, doble import) siguen sin abordar pero no bloquean la aprobacion.
+
+---
+
+### Verificaciones de Calidad
+
+| Verificacion | Resultado |
+|---|---|
+| `bun astro check` | 0 errores en archivos del proyecto |
+| `bun run build` | Exitoso (1 pagina, todos los modulos JS) |
+| `bun run test` | 407/407 tests pasando |
+| `bun run test:coverage` global | Umbrales superados |
+| `export-import.ts` cobertura | 98% statements, 90% branch (line 164 inalcanzable — aceptable) |
+| TypeScript strict | Sin errores |
+| Campo `environments?` en interfaz | Correcto — opcional, con JSDoc |
+| `exportCollections` parametro opcional | Correcto — default `[]`, omite campo si vacio |
+| `parseImportFile` parseo de environments | Correcto — defensivo, permisivo, omite si vacio |
+| Validacion cruzada en `handleFileChange` | Correcto — solo bloquea environments->Collections |
+| `handleImport` importacion bundleada | Correcto — colecciones + environments en una operacion |
+| Resumen del modal con environments | Correcto — "Includes N environment(s)" |
+| Tests nuevos (6) | Cubren todos los criterios del plan para environments bundleados |
+| No regresiones introducidas | Correcto |
+
+---
+
+### Verdict
+
+Los 5 archivos modificados implementan correctamente la nueva funcionalidad de bundling de environments en el export de colecciones y el nuevo comportamiento de importacion flexible. La implementacion es fiel al plan en todos sus criterios:
+
+- **`src/types/export.ts`**: El campo `environments?` esta tipado correctamente y documentado.
+- **`src/utils/export-import.ts`**: `exportCollections` y `parseImportFile` manejan el campo con logica defensiva y permisiva.
+- **`src/components/sidebar/CollectionPanel.tsx`**: El export pasa correctamente `environments.value`.
+- **`src/components/shared/ImportModal.tsx`**: La validacion cruzada flexible implementa exactamente el comportamiento especificado. `handleImport` ejecuta la operacion bundleada correctamente.
+- **`src/utils/__tests__/export-import.test.ts`**: Los 6 tests nuevos cubren todos los criterios del plan para environments bundleados.
+
+No se introdujeron regresiones. Los issues BAJA residuales de Reviews anteriores permanecen como deuda tecnica menor.
+
+**APROBADO** — Los cambios son correctos y la implementacion puede ser mergeada a main.

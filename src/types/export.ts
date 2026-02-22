@@ -11,6 +11,8 @@ export interface ExportEnvelope<T extends "collections" | "environments"> {
   exportedAt: number;
   type: T;
   data: T extends "collections" ? Collection[] : Environment[];
+  /** Environments bundled with a collections export (optional). */
+  environments?: Environment[];
 }
 
 export type CollectionExport = ExportEnvelope<"collections">;

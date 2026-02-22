@@ -76,20 +76,14 @@
   — this is intentional due to special basic auth handling, not a gap.
   Pattern: when moving code before an early return to fix ordering issues, verify whether the moved code
   now executes on every render regardless of condition — acceptable for pure/cheap computations.
-- collections-import-export (2026-02-22): APPROVED on first review + APPROVED on Review #2 after 2 fixes.
-  390 → 401 tests pass (11 new), build succeeds, 0 TS errors across both reviews.
-  Initial BAJA #1 (importResult dead code) and BAJA #3 (double import) remain unresolved but BAJA.
-  Fix 1: `downloadJson` cross-browser — added `appendChild`/`removeChild` around `anchor.click()`.
-  Correct DOM pattern: `appendChild → click → removeChild → revokeObjectURL`. Added 7 DOM spy tests
-  and 4 FileReader tests; coverage rose from 57.5% to 97.61% for export-import.ts.
-  Fix 2: Export button always disabled (SSR hydration mismatch) — changed CollectionPanel and
-  EnvironmentPanel from `client:idle` to `client:only="preact"`. Root cause: `client:idle` does SSR
-  where localStorage is absent, initializing signals with [] and generating disabled HTML. `client:only`
-  skips SSR entirely, rendering only in browser where localStorage is available. Correct pattern for
-  any component depending on browser-only APIs (localStorage, sessionStorage, IndexedDB).
-  Note: HistoryPanel still uses client:idle — may have same issue, worth checking in a future review.
-  Pattern: components that read from localStorage/signals at init time MUST use `client:only`, NOT
-  `client:idle` or `client:load` (both do SSR). This is a common Astro pitfall in this codebase.
+- collections-import-export (2026-02-22): APPROVED on R1 + R2 + R3. 390→401→407 tests.
+  R2 fixes: `downloadJson` cross-browser (appendChild/removeChild pattern) + `client:only` for panels.
+  R3 changes: bundled environments in collection export + flexible cross-panel import logic.
+  R3 key patterns: (1) optional field with `if (arr.length > 0)` guard avoids `field: []` noise in JSON;
+  (2) flexible cross-panel validation: only block environments→Collections, allow collections→any panel;
+  (3) same strategy applied to both collections and bundled environments in single import op.
+  BAJA residuals still unresolved: importResult dead code + double import in ImportModal.tsx.
+  Note: HistoryPanel still uses client:idle — may have SSR mismatch, worth checking in future review.
 
 ## Optimized Review Checklist
 

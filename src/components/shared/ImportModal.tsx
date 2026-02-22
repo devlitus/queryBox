@@ -11,9 +11,13 @@ import type { Environment } from "../../types/environment";
 // Summary helpers
 // ---------------------------------------------------------------------------
 
-function getCollectionsSummary(data: Collection[]): string {
+function getCollectionsSummary(data: Collection[], envs?: Environment[]): string {
   const totalRequests = data.reduce((sum, c) => sum + c.requests.length, 0);
-  return `Found ${data.length} collection${data.length !== 1 ? "s" : ""} with ${totalRequests} total request${totalRequests !== 1 ? "s" : ""}.`;
+  let text = `Found ${data.length} collection${data.length !== 1 ? "s" : ""} with ${totalRequests} total request${totalRequests !== 1 ? "s" : ""}.`;
+  if (envs && envs.length > 0) {
+    text += ` Includes ${envs.length} environment${envs.length !== 1 ? "s" : ""}.`;
+  }
+  return text;
 }
 
 function getEnvironmentsSummary(data: Environment[]): string {
@@ -86,10 +90,12 @@ export default function ImportModal() {
       const text = await readFileAsText(file);
       const result = parseImportFile(text);
 
-      // Cross-type validation: ensure the file type matches the intended target
-      if (result.type !== modalState?.target) {
+      // Collections files are accepted from any panel — they import
+      // both collections and any bundled environments in one operation.
+      // Environments-only files must match the panel (environments panel).
+      if (result.type === "environments" && modalState?.target === "collections") {
         setParseError(
-          `This file contains ${result.type}, but you are importing ${modalState?.target}.`
+          "This file contains environments. Open Import from the Environments tab to import it."
         );
         setParseResult(null);
         return;
@@ -108,6 +114,9 @@ export default function ImportModal() {
 
     if (parseResult.type === "collections") {
       importCollections(parseResult.data, strategy);
+      if (parseResult.environments && parseResult.environments.length > 0) {
+        importEnvironments(parseResult.environments, strategy);
+      }
     } else {
       importEnvironments(parseResult.data, strategy);
     }
@@ -125,7 +134,7 @@ export default function ImportModal() {
   let summary: string | null = null;
   if (parseResult) {
     if (parseResult.type === "collections") {
-      summary = getCollectionsSummary(parseResult.data as Collection[]);
+      summary = getCollectionsSummary(parseResult.data as Collection[], parseResult.environments);
     } else {
       summary = getEnvironmentsSummary(parseResult.data as Environment[]);
     }

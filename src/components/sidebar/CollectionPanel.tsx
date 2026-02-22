@@ -5,6 +5,7 @@ import {
   deleteCollection,
   removeRequestFromCollection,
 } from "../../stores/collection-store";
+import { environments } from "../../stores/environment-store";
 import { loadRequest } from "../../stores/http-store";
 import { showImportModal } from "../../stores/ui-store";
 import { exportCollections, downloadJson } from "../../utils/export-import";
@@ -236,7 +237,7 @@ export default function CollectionPanel() {
             aria-label="Export collections"
             title="Export Collections"
             disabled={collections.value.length === 0}
-            onClick={() => downloadJson(exportCollections(collections.value), "querybox-collections.json")}
+            onClick={() => downloadJson(exportCollections(collections.value, environments.value), "querybox-collections.json")}
           >
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />

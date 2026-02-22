@@ -43,6 +43,26 @@ describe("exportCollections", () => {
     expect(result.data).toHaveLength(2);
     expect(result.data[1].name).toBe("Second");
   });
+
+  it("includes environments when provided", () => {
+    const col = makeCollection({ id: "c1" });
+    const env = makeEnvironment({ id: "e1", name: "Dev" });
+    const result = exportCollections([col], [env]);
+    expect(result.environments).toHaveLength(1);
+    expect(result.environments![0].name).toBe("Dev");
+  });
+
+  it("omits environments field when none are provided", () => {
+    const col = makeCollection({ id: "c1" });
+    const result = exportCollections([col]);
+    expect(result.environments).toBeUndefined();
+  });
+
+  it("omits environments field when empty array is passed", () => {
+    const col = makeCollection({ id: "c1" });
+    const result = exportCollections([col], []);
+    expect(result.environments).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -100,6 +120,43 @@ describe("parseImportFile — valid collections", () => {
     const result = parseImportFile(json);
     if (result.type === "collections") {
       expect(result.data[0].requests).toHaveLength(1);
+    }
+  });
+
+  it("parses bundled environments when present", () => {
+    const col = makeCollection({ id: "c1" });
+    const env = makeEnvironment({ id: "e1", name: "Prod" });
+    const json = JSON.stringify(exportCollections([col], [env]));
+
+    const result = parseImportFile(json);
+    expect(result.type).toBe("collections");
+    if (result.type === "collections") {
+      expect(result.environments).toHaveLength(1);
+      expect(result.environments![0].name).toBe("Prod");
+    }
+  });
+
+  it("ignores invalid items in bundled environments", () => {
+    const col = makeCollection({ id: "c1" });
+    const env = makeEnvironment({ id: "e1", name: "Dev" });
+    const envelope = exportCollections([col], [env]);
+    // inject a malformed environment
+    (envelope as unknown as Record<string, unknown>)["environments"] = [env, { bad: true }];
+    const json = JSON.stringify(envelope);
+
+    const result = parseImportFile(json);
+    if (result.type === "collections") {
+      expect(result.environments).toHaveLength(1);
+    }
+  });
+
+  it("omits environments field when not present in file", () => {
+    const col = makeCollection({ id: "c1" });
+    const json = JSON.stringify(exportCollections([col]));
+
+    const result = parseImportFile(json);
+    if (result.type === "collections") {
+      expect(result.environments).toBeUndefined();
     }
   });
 });

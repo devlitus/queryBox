@@ -1,5 +1,6 @@
 import type { Collection } from "../types/persistence";
 import type { Environment } from "../types/environment";
+
 import type { CollectionExport, EnvironmentExport, ExportFile } from "../types/export";
 import { isCollection, isEnvironment } from "../services/storage";
 
@@ -9,15 +10,24 @@ import { isCollection, isEnvironment } from "../services/storage";
 
 /**
  * Constructs the export envelope for a set of collections.
+ * Optionally bundles environments so that variable references (e.g. {{baseUrl}})
+ * can be resolved on import.
  */
-export function exportCollections(collections: Collection[]): CollectionExport {
-  return {
+export function exportCollections(
+  collections: Collection[],
+  environments: Environment[] = []
+): CollectionExport {
+  const envelope: CollectionExport = {
     format: "querybox",
     version: 1,
     exportedAt: Date.now(),
     type: "collections",
     data: collections,
   };
+  if (environments.length > 0) {
+    envelope.environments = environments;
+  }
+  return envelope;
 }
 
 /**
@@ -110,13 +120,19 @@ export function parseImportFile(text: string): ExportFile {
 
   if (type === "collections") {
     const validItems = rawData.filter(isCollection);
-    return {
+    const rawEnvs = Array.isArray(obj["environments"]) ? (obj["environments"] as unknown[]) : [];
+    const validEnvs = rawEnvs.filter(isEnvironment);
+    const result: CollectionExport = {
       format: "querybox",
       version: 1,
       exportedAt: typeof obj["exportedAt"] === "number" ? obj["exportedAt"] : Date.now(),
       type: "collections",
       data: validItems,
     };
+    if (validEnvs.length > 0) {
+      result.environments = validEnvs;
+    }
+    return result;
   } else {
     const validItems = rawData.filter(isEnvironment);
     return {
