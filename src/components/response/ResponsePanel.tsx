@@ -1,10 +1,16 @@
 import ResponseStatusBar from "./ResponseStatusBar";
 import ResponseTabs from "./ResponseTabs";
+import AiDiagnoseButton from "./AiDiagnoseButton";
+import AiDiagnosisPanel from "./AiDiagnosisPanel";
 import { requestStatus, requestError } from "../../stores/http-store";
+import { canDiagnose, diagnosisStatus } from "../../stores/ai-diagnosis-store";
 
 export default function ResponsePanel() {
   const status = requestStatus.value;
   const error = requestError.value;
+  const showDiagnosis = canDiagnose.value;
+  const dxStatus = diagnosisStatus.value;
+  const showPanel = dxStatus !== "idle";
 
   return (
     <div class="flex flex-col border-t-2 border-pm-border flex-1">
@@ -77,6 +83,11 @@ export default function ResponsePanel() {
               : "Request Failed"}
           </p>
           <p class="text-pm-text-secondary text-xs max-w-md leading-relaxed">{error.message}</p>
+          {showDiagnosis && (
+            <div class="mt-4">
+              <AiDiagnoseButton />
+            </div>
+          )}
         </div>
       )}
 
@@ -86,6 +97,8 @@ export default function ResponsePanel() {
           <ResponseTabs />
         </>
       )}
+
+      {showPanel && <AiDiagnosisPanel />}
     </div>
   );
 }

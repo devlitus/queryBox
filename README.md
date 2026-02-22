@@ -47,6 +47,39 @@ Feature plans are stored in `docs/[feature-name]/` with acceptance criteria and 
 - **Language**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS
 
+## 🤖 AI-Powered Error Diagnosis
+
+Este proyecto incluye diagnóstico inteligente de errores HTTP mediante IA (Groq SDK). Cuando una solicitud HTTP falla o retorna un error (4xx/5xx), puedes obtener un análisis y sugerencias accionables generadas por IA.
+
+### Configuración
+
+1. **Obtén una API key de Groq** en https://console.groq.com
+2. **Copia el archivo de ejemplo**:
+   ```bash
+   cp .env.example .env
+   ```
+3. **Edita `.env`** y configura tu `GROQ_API_KEY`:
+   ```env
+   GROQ_API_KEY=gsk_tu_key_aquí
+   ```
+
+### Rate Limiting (opcional)
+
+Puedes ajustar los límites de rate limiting en `.env`:
+- `AI_RATE_LIMIT_MAX` — máximo de requests por ventana (default: 10)
+- `AI_RATE_LIMIT_WINDOW_MS` — tamaño de ventana en ms (default: 60000)
+
+### Deployment
+
+⚠️ **Este feature requiere un servidor Node.js** — no puede deployarse como sitio estático. El proyecto usa `@astrojs/node` adapter en modo `standalone`. Las páginas siguen siendo estáticas; solo el endpoint `/api/diagnose` se ejecuta en el servidor.
+
+### Uso
+
+- Cuando una request falla (CORS, timeout, network error), verás un botón **"Diagnosticar con AI"**
+- Para respuestas HTTP con status ≥ 400, el botón aparece en la barra de estado
+- El sistema muestra una preview de los datos antes de enviarlos a Groq (credenciales NUNCA se envían)
+- El diagnóstico se genera en streaming con sugerencias accionables
+
 ## 📚 Documentation
 
 - [Astro Docs](https://docs.astro.build)
