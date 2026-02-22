@@ -1,6 +1,7 @@
 import { signal, computed } from "@preact/signals";
 import { StorageService } from "../services/storage";
 import type { Environment, EnvironmentVariable } from "../types/environment";
+import type { ImportStrategy } from "../types/export";
 
 // ---------------------------------------------------------------------------
 // Signals
@@ -147,4 +148,65 @@ export function toggleVariable(envId: string, varId: string): void {
     };
   });
   StorageService.setEnvironments(environments.value);
+}
+
+/**
+ * Imports environments using the specified strategy.
+ *
+ * - "replace": Replaces all existing environments with the imported ones.
+ *   All items receive new IDs. If the currently active environment was
+ *   removed, activeEnvironmentId is reset to null.
+ * - "merge": Adds only environments whose name (case-insensitive) does not
+ *   already exist. Duplicate-named environments are skipped.
+ *
+ * Returns the count of added and skipped environments for user feedback.
+ */
+export function importEnvironments(
+  imported: Environment[],
+  strategy: ImportStrategy
+): { added: number; skipped: number } {
+  if (strategy === "replace") {
+    const reassigned = imported.map((e) => ({
+      ...e,
+      id: crypto.randomUUID(),
+      variables: e.variables.map((v) => ({ ...v, id: crypto.randomUUID() })),
+    }));
+    environments.value = reassigned;
+    StorageService.setEnvironments(environments.value);
+
+    // If the active environment no longer exists after replace, reset it
+    const activeStillExists = reassigned.some(
+      (e) => e.id === activeEnvironmentId.value
+    );
+    if (!activeStillExists && activeEnvironmentId.value !== null) {
+      activeEnvironmentId.value = null;
+      StorageService.setActiveEnvironmentId(null);
+    }
+
+    return { added: reassigned.length, skipped: 0 };
+  }
+
+  // merge: add only if name does not already exist (case-insensitive)
+  const existingNames = new Set(
+    environments.value.map((e) => e.name.toLowerCase())
+  );
+  const toAdd: Environment[] = [];
+  let skipped = 0;
+
+  for (const e of imported) {
+    if (existingNames.has(e.name.toLowerCase())) {
+      skipped++;
+    } else {
+      toAdd.push({
+        ...e,
+        id: crypto.randomUUID(),
+        variables: e.variables.map((v) => ({ ...v, id: crypto.randomUUID() })),
+      });
+      existingNames.add(e.name.toLowerCase());
+    }
+  }
+
+  environments.value = [...environments.value, ...toAdd];
+  StorageService.setEnvironments(environments.value);
+  return { added: toAdd.length, skipped };
 }

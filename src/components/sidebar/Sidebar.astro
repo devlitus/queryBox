@@ -19,7 +19,7 @@ import HistoryPanel from "./HistoryPanel";
 			aria-labelledby="tab-collections"
 			class="flex-1 overflow-y-auto p-2"
 		>
-			<CollectionPanel client:idle />
+			<CollectionPanel client:only="preact" />
 		</div>
 
 		<!-- Environments panel -->
@@ -30,7 +30,7 @@ import HistoryPanel from "./HistoryPanel";
 			aria-labelledby="tab-environments"
 			class="hidden flex-1 overflow-y-auto p-2"
 		>
-			<EnvironmentPanel client:idle />
+			<EnvironmentPanel client:only="preact" />
 		</div>
 
 		<!-- History panel -->

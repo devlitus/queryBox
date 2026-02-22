@@ -12,7 +12,10 @@ import {
   removeVariable,
   toggleVariable,
 } from "../../stores/environment-store";
+import { showImportModal } from "../../stores/ui-store";
+import { exportEnvironments, downloadJson } from "../../utils/export-import";
 import KeyValueTable from "../shared/KeyValueTable";
+import ImportModal from "../shared/ImportModal";
 import type { Environment, EnvironmentVariable } from "../../types/environment";
 import type { KeyValuePair } from "../../types/http";
 
@@ -291,27 +294,59 @@ export default function EnvironmentPanel() {
 
   return (
     <div class="flex flex-col gap-0">
-      {/* Header: title + new button */}
+      {/* Header: title + action buttons */}
       <div class="flex items-center justify-between px-2 py-1">
         <span class="text-xs text-pm-text-tertiary font-semibold uppercase tracking-wide">
           Environments
         </span>
-        <button
-          type="button"
-          class="text-xs text-pm-text-secondary hover:text-pm-text-primary transition-colors p-1 rounded hover:bg-pm-bg-elevated"
-          aria-label="Create new environment"
-          title="New Environment"
-          onClick={() => {
-            setShowNewInput((v) => !v);
-            setNewName("");
-            setNameError("");
-          }}
-        >
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
+        <div class="flex items-center gap-0.5">
+          {/* Import button */}
+          <button
+            type="button"
+            class="text-xs text-pm-text-secondary hover:text-pm-text-primary transition-colors p-1 rounded hover:bg-pm-bg-elevated"
+            aria-label="Import environments"
+            title="Import Environments"
+            onClick={() => { showImportModal.value = { target: "environments" }; }}
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+          </button>
+          {/* Export button */}
+          <button
+            type="button"
+            class="text-xs text-pm-text-secondary hover:text-pm-text-primary transition-colors p-1 rounded hover:bg-pm-bg-elevated disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Export environments"
+            title="Export Environments"
+            disabled={environments.value.length === 0}
+            onClick={() => downloadJson(exportEnvironments(environments.value), "querybox-environments.json")}
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </button>
+          {/* Create button */}
+          <button
+            type="button"
+            class="text-xs text-pm-text-secondary hover:text-pm-text-primary transition-colors p-1 rounded hover:bg-pm-bg-elevated"
+            aria-label="Create new environment"
+            title="New Environment"
+            onClick={() => {
+              setShowNewInput((v) => !v);
+              setNewName("");
+              setNameError("");
+            }}
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Inline new environment input */}
@@ -380,6 +415,9 @@ export default function EnvironmentPanel() {
           ))}
         </ul>
       )}
+
+      {/* Import modal — only rendered when target is "environments" */}
+      {showImportModal.value?.target === "environments" && <ImportModal />}
     </div>
   );
 }
