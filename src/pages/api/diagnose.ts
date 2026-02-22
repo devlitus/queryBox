@@ -1,5 +1,5 @@
 import type { APIContext } from "astro";
-import { checkRateLimit } from "../../server/rate-limiter";
+import { aiRateLimiter } from "../../server/rate-limiter";
 import { streamDiagnosis } from "../../server/groq-service";
 import type { DiagnosisContext, DiagnosisApiError } from "../../types/ai";
 import Groq from "groq-sdk";
@@ -115,7 +115,7 @@ export async function POST({ request, clientAddress }: APIContext) {
       "Cannot process request without client identification"
     );
   }
-  const rateLimit = checkRateLimit(clientAddress);
+  const rateLimit = aiRateLimiter.checkRateLimit(clientAddress);
 
   if (!rateLimit.allowed) {
     const retryAfterSeconds = Math.ceil(rateLimit.resetIn / 1000);
