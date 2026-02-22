@@ -13,18 +13,46 @@ All commands use Bun:
 
 - `bun install` - Install dependencies
 - `bun dev` - Start development server at `localhost:4321`
-- `bun build` - Build for production to `./dist/`
+- `bun run build` - Build for production to `./dist/` (NOT `bun build` — that's Bun's native bundler)
 - `bun preview` - Preview production build locally
-- `bun astro ...` - Run Astro CLI commands (e.g., `bun astro add`, `bun astro check`)
+- `bun astro check` - TypeScript check (0 errors required)
+- `bun run test` - Run tests with Vitest (NEVER `bun test` — that runs Bun's native runner)
+- `bun run test:watch` - Tests in watch mode
+- `bun run test:coverage` - Coverage (thresholds: 70% statements/branches/functions/lines)
+- `bun astro ...` - Run Astro CLI commands (e.g., `bun astro add`)
+
+**CRITICAL**: `bun test` ≠ `bun run test`. The former uses Bun's native test runner (fails with `localStorage is not defined`), the latter runs Vitest via package.json scripts.
 
 ## Project Structure
 
 ```
 src/
-├── assets/        # Static assets (images, SVGs)
-├── components/    # Reusable Astro components (.astro files)
-├── layouts/       # Layout components that wrap pages
-└── pages/         # File-based routing - each .astro file becomes a route
+├── assets/icons/       # SVG icons (imported with ?raw)
+├── components/         # UI components organized by area
+│   ├── header/         #   Header bar + EnvironmentSelector
+│   ├── footer/         #   Footer bar
+│   ├── sidebar/        #   CollectionPanel, HistoryPanel, EnvironmentPanel
+│   ├── request/        #   RequestBar, RequestConfigTabs, AuthEditor, BodyEditor
+│   ├── response/       #   ResponsePanel, ResponseTabs, CodeViewer
+│   ├── workbench/      #   HttpWorkbench (main island), TabBar, CodeSnippetModal
+│   └── shared/         #   Dropdown, Tabs, KeyValueTable, MethodBadge, ImportModal
+├── layouts/            # Layout.astro (base HTML) + AppLayout.astro (grid shell)
+├── pages/              # File-based routing
+│   ├── index.astro     #   Single page app entry
+│   └── api/            #   Server-side API routes (prerender = false)
+├── scripts/            # Custom Elements (vanilla TS)
+│   ├── tabs.ts         #   pm-tabs
+│   ├── dropdown.ts     #   pm-dropdown
+│   ├── tree.ts         #   pm-tree
+│   ├── sidebar.ts      #   pm-sidebar-toggle
+│   └── sidebar-resize.ts  # pm-sidebar-resize
+├── server/             # Server-only code (groq-service, rate-limiter)
+├── services/           # Client services (storage, http-client, ai-client)
+├── stores/             # Preact signals stores (tab, http, history, collection, environment, ui, ai-diagnosis)
+├── styles/             # global.css with Tailwind v4 @theme tokens
+├── test/               # Test infrastructure (setup.ts, factories.ts)
+├── types/              # TypeScript types (http, auth, environment, persistence, export, snippet, ai)
+└── utils/              # Pure utility functions (url, auth, interpolation, snippet-generators, export-import)
 ```
 
 ## Key Conventions
@@ -34,6 +62,15 @@ src/
 - **Layouts**: Shared page layouts go in `src/layouts/` and use `<slot />` for content injection
 - **Assets**: Import assets from `src/assets/` to get optimized image handling
 - **TypeScript**: Configured with Astro's strict TypeScript settings (`astro/tsconfigs/strict`)
+
+## Testing
+
+- **Runner**: Vitest + happy-dom, globals enabled (no need to import `describe`/`it`/`expect`)
+- **Test location**: Co-located `*.test.ts` next to source file by default. Use `__tests__/` subdirectory only when a module needs **multiple** test files (e.g., `collection-store.test.ts` + `__tests__/collection-store-import.test.ts`)
+- **Factories**: Typed factories in `src/test/factories.ts` — `makeRequestState()`, `makeHistoryEntry()`, `makeCollection()`, etc.
+- **Store tests**: `vi.resetModules()` + dynamic `import()` in `beforeEach` to reset module-level signals
+- **Global setup**: `afterEach(() => localStorage.clear())` in `src/test/setup.ts`
+- **Coverage excludes**: `http-client.ts` (fetch-coupled), `ui-store.ts` (trivial)
 
 ## Astro-Specific Notes
 
