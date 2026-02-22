@@ -13,10 +13,6 @@ Se auditaron **22 archivos fuente** del proyecto queryBox, con especial atenció
 introducidos en la rama `feature/ai-error-diagnosis`. El proyecto es una aplicación HTTP client
 (estilo Postman) construida con Astro 5 + Bun + TypeScript + Preact.
 
-El hallazgo más grave es la **presencia de una API key real de Groq en el archivo `.env`** — una
-credencial activa (`gsk_c9XF78F…`) que nunca debería existir en el repositorio aunque el archivo
-esté en `.gitignore`. La clave debe ser revocada inmediatamente.
-
 Fuera de esa credencial expuesta, la arquitectura de seguridad general es sólida: el endpoint de
 diagnóstico implementa rate limiting, el sanitizador de AI redacta campos sensibles antes de
 enviarlos a Groq, el renderer de Markdown hace HTML-escaping correcto, y no existen rutas de
