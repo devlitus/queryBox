@@ -26,7 +26,7 @@ export const onRequest: MiddlewareHandler = async (_context, next) => {
   // Content Security Policy — restricts which resources the browser can load.
   // Notes:
   //   - 'unsafe-inline' in style-src is required because Tailwind v4 injects styles inline.
-  //   - connect-src includes api.groq.com for the AI diagnosis endpoint.
+  //   - connect-src is limited to 'self' because all external requests go through the server-side proxy (/api/proxy).
   //   - script-src uses 'self' only — no inline scripts, no eval.
   response.headers.set(
     "Content-Security-Policy",
@@ -35,7 +35,7 @@ export const onRequest: MiddlewareHandler = async (_context, next) => {
       `script-src 'self'${import.meta.env.DEV ? " 'unsafe-inline'" : ""}`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "connect-src 'self' https://api.groq.com",
+      "connect-src 'self'",
       "img-src 'self' data:",
       "frame-ancestors 'none'",
       "base-uri 'self'",

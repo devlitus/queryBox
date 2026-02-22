@@ -38,7 +38,7 @@ export type RequestStatus = "idle" | "loading" | "success" | "error";
 
 export interface HttpError {
   message: string;
-  type: "network" | "cors" | "timeout" | "abort" | "unknown";
+  type: "network" | "cors" | "timeout" | "abort" | "unknown" | "rate-limit" | "forbidden";
 }
 
 export interface Tab {
