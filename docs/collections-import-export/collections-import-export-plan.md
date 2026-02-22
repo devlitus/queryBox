@@ -40,13 +40,30 @@ Permitir exportar e importar colecciones y environments como archivos JSON con f
 
 ## Formato de Exportacion queryBox
 
+### Archivo de colecciones
+
 ```json
 {
   "format": "querybox",
   "version": 1,
   "exportedAt": 1708617600000,
-  "type": "collections" | "environments",
-  "data": Collection[] | Environment[]
+  "type": "collections",
+  "data": Collection[],
+  "environments": Environment[]
+}
+```
+
+El campo `environments` es **opcional** y solo aparece cuando hay environments presentes al exportar. Permite distribuir colecciones y environments en un unico archivo para que el receptor pueda resolver variables como `{{baseUrl}}` al importar.
+
+### Archivo de environments
+
+```json
+{
+  "format": "querybox",
+  "version": 1,
+  "exportedAt": 1708617600000,
+  "type": "environments",
+  "data": Environment[]
 }
 ```
 
@@ -75,6 +92,8 @@ Ninguno.
      exportedAt: number;
      type: T;
      data: T extends "collections" ? Collection[] : Environment[];
+     /** Environments bundleados con el export de colecciones (opcional). */
+     environments?: Environment[];
    }
 
    export type CollectionExport = ExportEnvelope<"collections">;
@@ -86,10 +105,10 @@ Ninguno.
 
 2. **Crear `src/utils/export-import.ts`** con las funciones puras:
 
-   - `exportCollections(collections: Collection[]): CollectionExport` -- Construye el envelope de exportacion para colecciones.
+   - `exportCollections(collections: Collection[], environments: Environment[] = []): CollectionExport` -- Construye el envelope de exportacion para colecciones. Incluye el campo `environments` en el JSON solo si el array tiene elementos.
    - `exportEnvironments(environments: Environment[]): EnvironmentExport` -- Construye el envelope de exportacion para environments.
    - `downloadJson(data: ExportFile, filename: string): void` -- Crea un Blob con `JSON.stringify(data, null, 2)`, genera un Object URL, crea un `<a>` temporal con `download` attribute, lo clickea, y revoca el URL. Patron estandar del navegador para descargar archivos.
-   - `parseImportFile(text: string): ExportFile` -- Parsea JSON, valida el envelope (format === "querybox", version === 1, type valido), y valida cada item del array `data` usando los type guards existentes de `StorageService` (expuestos como utilidades). Lanza `Error` con mensaje descriptivo si la validacion falla.
+   - `parseImportFile(text: string): ExportFile` -- Parsea JSON, valida el envelope (format === "querybox", version === 1, type valido), y valida cada item del array `data` usando los type guards existentes de `StorageService` (expuestos como utilidades). Si `type === "collections"`, parsea y valida tambien el campo opcional `environments`. Lanza `Error` con mensaje descriptivo si la validacion falla. Items invalidos en `data` y en `environments` se descartan silenciosamente (comportamiento permisivo).
    - `readFileAsText(file: File): Promise<string>` -- Wrapper sobre `FileReader` que devuelve una Promise con el contenido del archivo como texto.
 
 3. **Exponer type guards de StorageService como funciones reutilizables.** Actualmente `isCollection`, `isEnvironment`, etc. son funciones privadas dentro de `storage.ts`. Se deben exportar las que necesitamos para la validacion de imports:
@@ -98,8 +117,13 @@ Ninguno.
 
 4. **Crear `src/utils/__tests__/export-import.test.ts`** con tests unitarios:
    - Test que `exportCollections` genera un envelope valido con todos los campos.
+   - Test que `exportCollections` incluye `environments` en el envelope cuando se pasan.
+   - Test que `exportCollections` omite el campo `environments` cuando no se pasan o se pasa un array vacio.
    - Test que `exportEnvironments` genera un envelope valido.
    - Test que `parseImportFile` acepta un JSON valido de colecciones.
+   - Test que `parseImportFile` acepta un JSON valido de colecciones con environments bundleados.
+   - Test que `parseImportFile` filtra items invalidos del array `environments` y retorna solo los validos.
+   - Test que `parseImportFile` omite el campo `environments` cuando el archivo no lo trae.
    - Test que `parseImportFile` acepta un JSON valido de environments.
    - Test que `parseImportFile` lanza error para JSON invalido (no es objeto, falta `format`, `format` incorrecto, `version` incorrecta, `type` invalido, `data` no es array, items del array no pasan type guard).
    - Test que `parseImportFile` filtra items invalidos del array `data` y retorna solo los validos (comportamiento permisivo: importar lo que se pueda).
@@ -260,7 +284,11 @@ Phase 1 y Phase 2 completadas.
    7. Usuario clickea "Import".
    8. Store se actualiza, modal se cierra.
 
-3. **Validacion cruzada de tipo:** Si el usuario abre el modal de import para colecciones pero selecciona un archivo de environments (o viceversa), mostrar un error claro: "This file contains [environments], but you are importing [collections]." Esto se logra comparando `parseResult.type` con `target`.
+3. **Comportamiento al importar segun tipo de archivo:**
+
+   - **Archivo de colecciones** (con o sin environments bundleados): aceptado desde cualquier panel. Siempre importa colecciones + environments bundleados (si los hay) en una sola operacion. El resumen muestra "Found X collections with Y requests. Includes N environments."
+   - **Archivo de environments**: aceptado solo desde el panel de Environments. Si se intenta importar desde el panel de Collections se muestra el error: "This file contains environments. Open Import from the Environments tab to import it."
+   - Esta logica reemplaza la validacion cruzada estricta original (que rechazaba cualquier archivo cuyo `type` no coincidiera con el `target` del panel). El nuevo comportamiento permite un flujo de un solo import para restaurar colecciones y environments juntos.
 
 ### Archivos afectados
 
@@ -280,7 +308,9 @@ Phase 1 y Phase 2 completadas.
 - [ ] `ImportModal.tsx` creado siguiendo patrones de modales existentes.
 - [ ] Seleccion de archivo funcional con input file oculto.
 - [ ] Parseo y validacion inmediatos con feedback de error o resumen.
-- [ ] Validacion cruzada de tipo (collections vs environments).
+- [ ] Archivo de colecciones aceptado desde cualquier panel; importa colecciones + environments bundleados.
+- [ ] Archivo de environments rechazado en panel de Collections con mensaje claro.
+- [ ] Resumen muestra environments bundleados cuando estan presentes.
 - [ ] Selector de estrategia merge/replace con advertencia visual en replace.
 - [ ] Boton Import deshabilitado hasta tener archivo valido parseado.
 - [ ] Importacion ejecuta store function correcta y cierra modal.
@@ -314,7 +344,7 @@ Phase 1, Phase 2 y Phase 3 completadas.
 1. **Modificar `src/components/sidebar/CollectionPanel.tsx`:**
 
    - Agregar dos botones icono en el header (junto al boton "+" existente):
-     - Boton **Export** (icono de download/flecha abajo): Llama a `downloadJson(exportCollections(collections.value), "querybox-collections.json")`. Deshabilitado si no hay colecciones (`collections.value.length === 0`).
+     - Boton **Export** (icono de download/flecha abajo): Llama a `downloadJson(exportCollections(collections.value, environments.value), "querybox-collections.json")`. Incluye los environments activos en el JSON exportado. Deshabilitado si no hay colecciones (`collections.value.length === 0`).
      - Boton **Import** (icono de upload/flecha arriba): Abre el modal seteando `showImportModal.value = { target: "collections" }`.
    - Los botones usan las mismas clases que el boton "+" existente: `text-xs text-pm-text-secondary hover:text-pm-text-primary transition-colors p-1 rounded hover:bg-pm-bg-elevated`.
    - Orden de los botones en el header: Import | Export | + (Create).
@@ -408,14 +438,16 @@ Phases 1-4 completadas.
 
 3. **Verificacion manual (checklist para el reviewer):**
    - [ ] Crear 2-3 colecciones con requests variados (diferentes metodos, headers, auth, body).
-   - [ ] Exportar colecciones: verificar que se descarga un archivo .json con estructura correcta.
-   - [ ] Abrir el archivo JSON exportado y verificar que contiene todas las colecciones y requests.
-   - [ ] Borrar todas las colecciones del localStorage.
-   - [ ] Importar el archivo con estrategia "replace": verificar que las colecciones aparecen en el sidebar.
-   - [ ] Crear una coleccion nueva, importar el mismo archivo con estrategia "merge": verificar que no se duplican las existentes y solo se agregan las nuevas.
-   - [ ] Repetir flujo completo para environments.
+   - [ ] Crear 1-2 environments con variables (ej: `baseUrl`, `apiKey`).
+   - [ ] Exportar colecciones desde CollectionPanel: verificar que el archivo .json contiene `data` (colecciones) y `environments` (con los environments activos).
+   - [ ] Exportar environments desde EnvironmentPanel: verificar que el archivo .json contiene solo `data` con environments.
+   - [ ] Borrar todas las colecciones y environments del localStorage.
+   - [ ] Importar el archivo de colecciones (con environments bundleados) desde el panel de **Collections** con estrategia "replace": verificar que aparecen colecciones Y environments en un solo import.
+   - [ ] Importar el mismo archivo desde el panel de **Environments**: verificar que tambien importa colecciones y environments.
+   - [ ] Crear una coleccion nueva, importar el mismo archivo con estrategia "merge": verificar que no se duplican los existentes y solo se agregan los nuevos.
+   - [ ] Intentar importar un archivo de environments desde el panel de Collections: verificar mensaje de error claro.
    - [ ] Intentar importar un archivo JSON invalido: verificar mensaje de error claro.
-   - [ ] Intentar importar un archivo de environments cuando se espera colecciones: verificar error de tipo cruzado.
+   - [ ] Verificar que el resumen del modal muestra "Includes N environment(s)" cuando el archivo tiene environments bundleados.
    - [ ] Verificar que el boton Export esta deshabilitado cuando no hay datos.
    - [ ] Verificar accesibilidad del modal con keyboard: Tab navega entre elementos, Escape cierra, Enter activa botones.
 
@@ -470,6 +502,16 @@ Alternativa considerada: Dos modales separados (`ImportCollectionsModal`, `Impor
 ### Por que merge usa comparacion por nombre (no por ID)
 
 Al importar, todos los IDs se regeneran con `crypto.randomUUID()`. Comparar por ID original seria inutil porque siempre serian diferentes. El nombre es la unica heuristica estable para detectar duplicados. La comparacion es case-insensitive para ser mas permisiva.
+
+### Por que bundlear environments en el export de colecciones
+
+Las colecciones frecuentemente referencian variables de environment (ej: `{{baseUrl}}`, `{{apiKey}}`). Sin los environments, las requests importadas no funcionarian. Bundlear los environments directamente en el archivo de colecciones permite distribuir un workspace completo en un unico archivo y restaurarlo con un solo import, sin que el usuario tenga que recordar exportar e importar los environments por separado.
+
+El campo `environments` es opcional: si no hay environments, no se incluye en el JSON (sin ruido innecesario). El export de environments standalone sigue disponible para casos donde solo se quieren compartir variables.
+
+### Por que los archivos de colecciones se pueden importar desde cualquier panel
+
+Con el bundling de environments, el archivo de colecciones es en realidad un "workspace export". Forzar al usuario a importarlo desde un panel especifico seria arbitrario. La regla simplificada es: un archivo de colecciones siempre importa todo lo que contiene (colecciones + environments), sin importar desde donde se active el modal. Un archivo de environments solo se puede importar desde el panel de Environments porque es exclusivamente datos de environments.
 
 ### Por que no incluir Postman import en esta fase
 
